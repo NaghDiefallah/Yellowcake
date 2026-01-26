@@ -1,0 +1,67 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="using:Yellowcake.Converters"
+             x:Class="Yellowcake.App"
+             RequestedThemeVariant="Dark">
+
+	<Application.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="avares://Yellowcake/Styles/Brushes.axaml"/>
+			</ResourceDictionary.MergedDictionaries>
+
+			<conv:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+
+			<StreamGeometry x:Key="folder_open_regular">M10.125 7.6875H15.75C16.1642 7.6875 16.5 8.02321 16.5 8.4375V14.5625L13.875 9.3125C13.5625 8.6875 12.9375 8.3125 12.25 8.3125H4.5V6.25C4.5 5.83579 4.83579 5.5 5.25 5.5H7.3125L9.0625 7.25C9.34375 7.53125 9.725 7.6875 10.125 7.6875Z M3 6.25C3 5.00736 4.00736 4 5.25 4H7.6875C8.0875 4 8.46875 4.15625 8.75 4.4375L10.5 6.1875H15.75C16.9926 6.1875 18 7.19486 18 8.4375V14.75C18 15.9926 16.9926 17 15.75 17H5.25C4.00736 17 3 15.9926 3 14.75V6.25Z</StreamGeometry>
+			<StreamGeometry x:Key="search_regular">M15.75 14.75L19.75 18.75M17.5 10.75C17.5 14.4779 14.4779 17.5 10.75 17.5C7.02208 17.5 4 14.4779 4 10.75C4 7.02208 7.02208 4 10.75 4C14.4779 4 17.5 7.02208 17.5 10.75Z</StreamGeometry>
+		</ResourceDictionary>
+	</Application.Resources>
+
+	<Application.Styles>
+		<FluentTheme />
+		<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+		<StyleInclude Source="avares://Yellowcake/Styles/Notifications.axaml"/>
+
+		<Style Selector="Button">
+			<Setter Property="CornerRadius" Value="4"/>
+			<Setter Property="Padding" Value="12,6"/>
+			<Setter Property="Transitions">
+				<Transitions>
+					<BrushTransition Property="Background" Duration="0:0:0.1" />
+					<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.07" />
+				</Transitions>
+			</Setter>
+		</Style>
+
+		<Style Selector="Button:pressed">
+			<Setter Property="RenderTransform" Value="scale(0.98)" />
+		</Style>
+
+		<Style Selector="ListBox">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="BorderThickness" Value="0"/>
+		</Style>
+
+		<Style Selector="ListBoxItem">
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+
+		<Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource HoverGrayBrush}"/>
+		</Style>
+
+		<Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+
+		<Style Selector="ScrollBar">
+			<Setter Property="AllowAutoHide" Value="True"/>
+		</Style>
+
+		<Style Selector="ScrollBar /template/ Thumb">
+			<Setter Property="Background" Value="#333"/>
+			<Setter Property="CornerRadius" Value="2"/>
+		</Style>
+	</Application.Styles>
+</Application>

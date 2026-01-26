@@ -1,0 +1,14 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Color x:Key="SystemAccentColor">#FDB813</Color>
+    <Color x:Key="WarningRedColor">#FF4444</Color>
+    <Color x:Key="DeepBackgroundColor">#080808</Color>
+    <Color x:Key="CardBackgroundColor">#121212</Color>
+    <Color x:Key="HoverGrayColor">#1A1A1A</Color>
+
+    <SolidColorBrush x:Key="SystemAccentBrush" Color="{StaticResource SystemAccentColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningRedColor}"/>
+    <SolidColorBrush x:Key="DeepBackgroundBrush" Color="{StaticResource DeepBackgroundColor}"/>
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="{StaticResource CardBackgroundColor}"/>
+    <SolidColorBrush x:Key="HoverGrayBrush" Color="{StaticResource HoverGrayColor}"/>
+</ResourceDictionary>

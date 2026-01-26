@@ -1,0 +1,57 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="NotificationCard">
+		<Setter Property="Background" Value="{StaticResource CardBackgroundBrush}"/>
+		<Setter Property="BorderBrush" Value="{StaticResource HoverGrayBrush}"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="CornerRadius" Value="8"/>
+		<Setter Property="MinWidth" Value="350"/>
+		<Setter Property="MaxWidth" Value="500"/>
+		<Setter Property="Margin" Value="0,0,0,25"/>
+		<Setter Property="Padding" Value="4"/>
+		<Setter Property="Opacity" Value="0"/>
+
+		<Setter Property="RenderTransform">
+			<Setter.Value>
+				<TransformOperations>none</TransformOperations>
+			</Setter.Value>
+		</Setter>
+
+		<Setter Property="Transitions">
+			<Transitions>
+				<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut" />
+				<DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+			</Transitions>
+		</Setter>
+	</Style>
+
+	<Style Selector="NotificationCard:success">
+		<Setter Property="BorderBrush" Value="#4CAF50"/>
+	</Style>
+	<Style Selector="NotificationCard:information">
+		<Setter Property="BorderBrush" Value="{StaticResource SystemAccentBrush}"/>
+	</Style>
+	<Style Selector="NotificationCard:error">
+		<Setter Property="BorderBrush" Value="{StaticResource WarningBrush}"/>
+	</Style>
+	<Style Selector="NotificationCard:warning">
+		<Setter Property="BorderBrush" Value="#FFCC00"/>
+	</Style>
+
+	<Style Selector="NotificationCard /template/ ContentControl#PART_Content">
+		<Setter Property="Foreground" Value="White"/>
+		<Setter Property="FontSize" Value="13"/>
+	</Style>
+
+	<Style Selector="NotificationCard /template/ TextBlock#PART_Title">
+		<Setter Property="FontWeight" Value="SemiBold"/>
+		<Setter Property="FontSize" Value="15"/>
+		<Setter Property="Margin" Value="0,0,0,4"/>
+		<Setter Property="Foreground" Value="{StaticResource SystemAccentBrush}"/>
+	</Style>
+
+	<Style Selector="NotificationCard /template/ Panel#PART_Container">
+		<Setter Property="Background" Value="{StaticResource DeepBackgroundBrush}"/>
+	</Style>
+</Styles>
