@@ -1,54 +1,58 @@
-﻿using System;
-using System.IO;
-using Avalonia;
+﻿using Avalonia;
+using Avalonia.Media;
 using Serilog;
+using System;
+using System.IO;
 
-namespace Yellowcake
+namespace Yellowcake;
+
+internal class Program
 {
-    internal class Program
+    [STAThread]
+    public static void Main(string[] args)
     {
-        // Initialization code. Don't use any Avalonia, third-party APIs or any
-        // SynchronizationContext-reliant code before AppMain is called.
-        [STAThread]
-        public static void Main(string[] args)
+        string logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
+        if (!Directory.Exists(logDirectory)) Directory.CreateDirectory(logDirectory);
+
+        string logPath = Path.Combine(logDirectory, "yellowcake-.log");
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .Enrich.FromLogContext()
+            .WriteTo.Debug()
+            .WriteTo.File(logPath,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+        try
         {
-            // 1. Initialize Serilog
-            string logPath = Path.Combine(AppContext.BaseDirectory, "logs", "yellowcake-.log");
+            Log.Information("Yellowcake Mod Manager Initializing...");
 
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Debug() // Writes to Visual Studio's Output window
-                .WriteTo.File(logPath,
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 7,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
-
-            try
-            {
-                Log.Information("Yellowcake Mod Manager Starting...");
-
-                BuildAvaloniaApp()
-                    .StartWithClassicDesktopLifetime(args);
-            }
-            catch (Exception ex)
-            {
-                // Capture startup failures (e.g., missing dependencies, DLL conflicts)
-                Log.Fatal(ex, "The application failed to start correctly.");
-                throw;
-            }
-            finally
-            {
-                // Ensure all logs are written to disk before closing
-                Log.CloseAndFlush();
-            }
+            BuildAvaloniaApp()
+                .StartWithClassicDesktopLifetime(args);
         }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application terminated unexpectedly.");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
 
-        // Avalonia configuration, don't remove; also used by visual designer.
-        public static AppBuilder BuildAvaloniaApp()
-            => AppBuilder.Configure<App>()
-                .UsePlatformDetect()
-                .WithInterFont()
-                .LogToTrace(); // Redirects Avalonia internal logs to System.Diagnostics.Trace
+    public static AppBuilder BuildAvaloniaApp()
+    {
+        return AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+            .LogToTrace()
+            .With(new Win32PlatformOptions
+            {
+                OverlayPopups = true,
+                RenderingMode = new[] { Win32RenderingMode.Wgl, Win32RenderingMode.AngleEgl, Win32RenderingMode.Software }
+            });
     }
 }

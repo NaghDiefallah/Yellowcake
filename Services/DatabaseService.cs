@@ -1,6 +1,8 @@
 ﻿using LiteDB;
 using Yellowcake.Models;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Serilog;
 
@@ -8,68 +10,121 @@ namespace Yellowcake.Services;
 
 public class DatabaseService
 {
-    private readonly string _dbPath;
+    private readonly string _connectionString;
+    public const string SettingsCollection = "settings";
+    public const string AddonsCollection = "addons";
 
-    public DatabaseService(string dbPath)
+    public DatabaseService()
     {
-        _dbPath = dbPath;
-        // LiteDB creates the file and collections automatically on first use.
-        Log.Information("DatabaseService initialized using LiteDB at {Path}", dbPath);
-    }
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string dbDir = Path.Combine(appData, "Yellowcake");
 
-    public void SaveSetting(string key, string? value)
-    {
-        using var db = new LiteDatabase(_dbPath);
-        var settings = db.GetCollection<SettingItem>("settings");
-
-        var item = new SettingItem { Id = key, Value = value };
-        settings.Upsert(item);
-    }
-
-    public string? GetSetting(string key)
-    {
-        using var db = new LiteDatabase(_dbPath);
-        return db.GetCollection<SettingItem>("settings").FindById(key)?.Value;
-    }
-
-    public void RegisterMod(Mod mod)
-    {
-        using var db = new LiteDatabase(_dbPath);
-        var mods = db.GetCollection<Mod>("mods");
-
-        // Upsert uses the 'Id' property of your Mod class as the primary key
-        mods.Upsert(mod);
-    }
-
-    public void UpdateModEnabled(string modId, bool enabled)
-    {
-        using var db = new LiteDatabase(_dbPath);
-        var mods = db.GetCollection<Mod>("mods");
-
-        var mod = mods.FindById(modId);
-        if (mod != null)
+        if (!Directory.Exists(dbDir))
         {
-            mod.IsEnabled = enabled;
-            mods.Update(mod);
+            Directory.CreateDirectory(dbDir);
+        }
+
+        string dbPath = Path.Combine(dbDir, "data.db");
+        _connectionString = $"Filename={dbPath};Connection=shared";
+
+        BsonMapper.Global.Entity<Mod>().Id(m => m.Id);
+
+        Log.Information("Database initialized for cross-platform use at: {Path}", dbPath);
+    }
+
+    private ILiteDatabase GetDatabase() => new LiteDatabase(_connectionString);
+
+    public void Upsert<T>(string collectionName, T item) where T : class
+    {
+        try
+        {
+            using var db = GetDatabase();
+            db.GetCollection<T>(collectionName).Upsert(item);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Data persistence error in {Collection}", collectionName);
         }
     }
 
-    public List<Mod> GetAllMods()
+    public List<T> GetAll<T>(string collectionName) where T : class
     {
-        using var db = new LiteDatabase(_dbPath);
-        return db.GetCollection<Mod>("mods").FindAll().ToList();
+        try
+        {
+            using var db = GetDatabase();
+            return db.GetCollection<T>(collectionName).FindAll().ToList();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Data retrieval error in {Collection}", collectionName);
+            return [];
+        }
     }
 
-    public void DeleteMod(string id)
+    public void Delete(string collectionName, BsonValue id)
     {
-        using var db = new LiteDatabase(_dbPath);
-        db.GetCollection<Mod>("mods").Delete(id);
+        try
+        {
+            using var db = GetDatabase();
+            db.GetCollection(collectionName).Delete(id);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Deletion error for ID {Id} in {Collection}", id, collectionName);
+        }
     }
 
-    // Small helper class for settings since LiteDB works best with typed objects
+    public void SaveSetting(string key, object? value)
+    {
+        if (value == null) return;
+
+        try
+        {
+            using var db = GetDatabase();
+            db.GetCollection<SettingItem>(SettingsCollection).Upsert(new SettingItem
+            {
+                Id = key,
+                Value = value.ToString()
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to persist setting: {Key}", key);
+        }
+    }
+
+    public string? GetSetting(string key, string? defaultValue = null)
+    {
+        try
+        {
+            using var db = GetDatabase();
+            var item = db.GetCollection<SettingItem>(SettingsCollection).FindById(key);
+            return item?.Value ?? defaultValue;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Setting {Key} resolution failed; returning default.", key);
+            return defaultValue;
+        }
+    }
+
+    public T? GetSetting<T>(string key, T? defaultValue = default)
+    {
+        try
+        {
+            var value = GetSetting(key);
+            if (value == null) return defaultValue;
+            return (T)Convert.ChangeType(value, typeof(T));
+        }
+        catch
+        {
+            return defaultValue;
+        }
+    }
+
     private class SettingItem
     {
-        public string Id { get; set; } = string.Empty; // LiteDB treats 'Id' as the primary key
+        public string Id { get; set; } = string.Empty;
         public string? Value { get; set; }
     }
 }

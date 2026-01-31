@@ -3,8 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Threading;
 using System;
-using System.IO;
-using System.Reflection;
 
 namespace Yellowcake.Services;
 
@@ -13,7 +11,7 @@ public class NotificationService
     private static NotificationService? _instance;
     public static NotificationService Instance => _instance ??= new NotificationService();
 
-    private IManagedNotificationManager? _notificationManager;
+    private WindowNotificationManager? _notificationManager;
 
     public void Initialize(Visual visual)
     {
@@ -23,7 +21,8 @@ public class NotificationService
         _notificationManager = new WindowNotificationManager(topLevel)
         {
             Position = NotificationPosition.BottomCenter,
-            MaxItems = 3
+            MaxItems = 3,
+            Margin = new Thickness(0, 0, 0, 20)
         };
     }
 
@@ -35,15 +34,19 @@ public class NotificationService
             return;
         }
 
-        _notificationManager?.Show(new Notification(
+        if (_notificationManager == null) return;
+
+        var notification = new Notification(
             title,
             message,
             type,
-            expiration ?? TimeSpan.FromSeconds(4)));
+            expiration ?? TimeSpan.FromSeconds(5));
+
+        _notificationManager.Show(notification);
     }
 
-    public void Success(string message) => Show("Success", message, NotificationType.Success);
-    public void Error(string message) => Show("Error", message, NotificationType.Error);
-    public void Info(string message) => Show("Information", message, NotificationType.Information);
-    public void Warning(string message) => Show("Warning", message, NotificationType.Warning);
+    public void Success(string message) => Show("SUCCESS", message, NotificationType.Success);
+    public void Error(string message) => Show("ERROR", message, NotificationType.Error);
+    public void Info(string message) => Show("INFO", message, NotificationType.Information);
+    public void Warning(string message) => Show("WARNING", message, NotificationType.Warning);
 }

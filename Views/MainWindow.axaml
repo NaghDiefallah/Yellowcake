@@ -1,0 +1,96 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Yellowcake.ViewModels"
+        xmlns:conv="using:Yellowcake.Converters"
+        xmlns:views="clr-namespace:Yellowcake.Views"
+        x:Class="Yellowcake.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Yellowcake"
+        Width="1100" Height="800"
+        Background="{DynamicResource DeepBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="90"
+        ExtendClientAreaChromeHints="NoChrome"
+        RenderOptions.TextRenderingMode="Antialias"
+        UseLayoutRounding="True">
+
+	<Window.Resources>
+		<conv:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+		<conv:StatusColorConverter x:Key="StatusColorConverter"/>
+	</Window.Resources>
+
+	<Window.Styles>
+		<Style Selector="TabControl">
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+
+		<Style Selector="TabItem">
+			<Setter Property="FontSize" Value="15"/>
+			<Setter Property="FontWeight" Value="SemiBold"/>
+			<Setter Property="Height" Value="54"/>
+			<Setter Property="HorizontalContentAlignment" Value="Center"/>
+			<Setter Property="VerticalContentAlignment" Value="Center"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+
+		<Style Selector="Button.Icon, ToggleButton.Icon">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Width" Value="40"/>
+			<Setter Property="Height" Value="40"/>
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="CornerRadius" Value="20"/>
+			<Setter Property="BorderThickness" Value="0"/>
+		</Style>
+
+		<Style Selector="Button.WindowControl">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Width" Value="45"/>
+			<Setter Property="Height" Value="32"/>
+			<Setter Property="CornerRadius" Value="0"/>
+		</Style>
+
+		<Style Selector="Button.WindowControl:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="#1FFFFFFF"/>
+		</Style>
+
+		<Style Selector="Button.WindowControl.Close:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="#E81123"/>
+		</Style>
+
+		<Style Selector="Button.Filled">
+			<Setter Property="Background" Value="{DynamicResource SystemAccentBrush}"/>
+			<Setter Property="Foreground" Value="#000000"/>
+			<Setter Property="FontWeight" Value="Heavy"/>
+			<Setter Property="CornerRadius" Value="8"/>
+			<Setter Property="Padding" Value="20,8"/>
+		</Style>
+	</Window.Styles>
+
+	<Grid RowDefinitions="Auto, *, Auto">
+		<views:HeaderView Grid.Row="0"/>
+
+		<Panel Grid.Row="1">
+			<TabControl IsVisible="{Binding !IsSettingsOpen}">
+				<TabControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<UniformGrid Columns="2" Rows="1" />
+					</ItemsPanelTemplate>
+				</TabControl.ItemsPanel>
+				<TabItem Header="INSTALLED MODS">
+					<views:InstalledModsView Margin="16" />
+				</TabItem>
+				<TabItem Header="BROWSE">
+					<views:BrowseView Margin="16" />
+				</TabItem>
+			</TabControl>
+
+			<Border IsVisible="{Binding IsSettingsOpen}" Background="{DynamicResource DeepBackgroundBrush}" Padding="40">
+				<views:SettingsView />
+			</Border>
+		</Panel>
+
+		<views:FooterView Grid.Row="2"/>
+	</Grid>
+</Window>

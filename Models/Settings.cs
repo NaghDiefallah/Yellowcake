@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Yellowcake.ViewModels
+namespace Yellowcake.Models
 {
-    internal class ViewModelBase
+    internal class Settings
     {
     }
 }

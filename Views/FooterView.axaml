@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Yellowcake.ViewModels"
+             x:Class="Yellowcake.Views.FooterView"
+             x:DataType="vm:MainViewModel">
+
+	<Border Background="{DynamicResource CardBackgroundBrush}"
+            CornerRadius="16"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            Padding="10"
+            Margin="0,4,0,0">
+		<Grid ColumnDefinitions="*, Auto">
+			<Button Command="{Binding SelectExeCommand}"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    Padding="16,0"
+                    Height="54"
+                    CornerRadius="10">
+				<Button.Styles>
+					<Style Selector="Button:pointerover /template/ ContentPresenter">
+						<Setter Property="Background" Value="#0DFFFFFF"/>
+					</Style>
+				</Button.Styles>
+
+				<StackPanel VerticalAlignment="Center" Spacing="4">
+					<StackPanel Orientation="Horizontal" Spacing="8">
+						<PathIcon Data="{StaticResource FolderIcon}"
+                                  Width="12" Height="12"
+                                  Foreground="{DynamicResource SystemAccentBrush}"/>
+						<TextBlock Text="INSTALLATION PATH"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   LetterSpacing="0.8"
+                                   Foreground="{DynamicResource SystemAccentBrush}"
+                                   Opacity="0.9"/>
+					</StackPanel>
+
+					<TextBlock Text="{Binding GamePath}"
+                               FontSize="13"
+                               Opacity="0.5"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="500"/>
+				</StackPanel>
+			</Button>
+
+			<StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        Margin="8,0,0,0">
+
+				<Separator Width="1"
+                           Height="24"
+                           Background="{DynamicResource BorderBrush}"
+                           VerticalAlignment="Center"/>
+
+				<Button Command="{Binding LaunchGameCommand}"
+                        IsEnabled="{Binding IsGameDetected}"
+                        Classes="Filled"
+                        Width="240"
+                        Height="54"
+                        CornerRadius="12"
+                        VerticalContentAlignment="Center">
+					<Button.Transitions>
+						<Transitions>
+							<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.075"/>
+						</Transitions>
+					</Button.Transitions>
+
+					<Button.Styles>
+						<Style Selector="Button:pointerover">
+							<Setter Property="RenderTransform" Value="scale(1.015)"/>
+						</Style>
+						<Style Selector="Button:pressed">
+							<Setter Property="RenderTransform" Value="scale(0.97)"/>
+						</Style>
+					</Button.Styles>
+
+					<Grid ColumnDefinitions="Auto, *">
+						<PathIcon Data="{StaticResource PlayIcon}"
+                                  Width="18" Height="18"
+                                  Margin="0,0,12,0"
+                                  Foreground="Black"/>
+						<TextBlock Grid.Column="1"
+                                   Text="LAUNCH GAME"
+                                   FontWeight="Heavy"
+                                   FontSize="14"
+                                   LetterSpacing="0.5"
+                                   VerticalAlignment="Center"
+                                   Foreground="Black"/>
+					</Grid>
+				</Button>
+			</StackPanel>
+		</Grid>
+	</Border>
+</UserControl>

@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Yellowcake.ViewModels"
+             xmlns:conv="using:Yellowcake.Converters"
+             x:Class="Yellowcake.Views.HeaderView"
+             x:DataType="vm:MainViewModel">
+
+	<UserControl.Resources>
+		<conv:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+		<conv:StatusColorConverter x:Key="StatusColorConverter"/>
+	</UserControl.Resources>
+
+	<Panel Height="90">
+		<Border Background="{DynamicResource HeaderBackgroundBrush}"
+                IsHitTestVisible="False"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1" />
+
+		<Grid ColumnDefinitions="Auto, *, Auto" Margin="24,0,0,0">
+			<StackPanel Orientation="Horizontal" Spacing="28" VerticalAlignment="Center">
+				<StackPanel Spacing="-2">
+					<TextBlock Text="YELLOWCAKE" FontWeight="Black" FontSize="24" Foreground="{DynamicResource SystemAccentBrush}" LetterSpacing="3"/>
+					<TextBlock Text="MOD MANAGER" FontSize="10" FontWeight="Bold" Opacity="0.6" Margin="2,0,0,0"/>
+				</StackPanel>
+
+				<Rectangle Width="1" Height="36" Fill="{DynamicResource DividerBrush}"/>
+
+				<StackPanel Spacing="4">
+					<TextBlock Text="SYSTEM STATUS" FontSize="10" FontWeight="Black" Opacity="0.5"/>
+					<StackPanel Orientation="Horizontal" Spacing="8">
+						<Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{Binding IsGameDetected, Converter={StaticResource StatusColorConverter}}"/>
+						<TextBlock Text="{Binding GameStatus}" FontSize="14" FontWeight="Medium"/>
+					</StackPanel>
+				</StackPanel>
+			</StackPanel>
+
+			<StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Right">
+				<StackPanel Orientation="Horizontal">
+					<Button Click="MinimizeWindow_Click"
+							Classes="WindowControl Min"
+							Width="46" Height="32"
+							ToolTip.Tip="Minimize">
+						<PathIcon Data="{StaticResource MinIcon}" Width="13" Height="13" Foreground="White"/>
+					</Button>
+
+					<Button Click="MaximizeWindow_Click"
+							Classes="WindowControl Max"
+							Width="46" Height="32"
+							ToolTip.Tip="Maximize">
+						<PathIcon Data="{StaticResource MaxIcon}" Width="13" Height="13" Foreground="White"/>
+					</Button>
+
+					<Button Click="CloseWindow_Click"
+							Classes="WindowControl Close"
+							Width="46" Height="32"
+							ToolTip.Tip="Close">
+						<PathIcon Data="{StaticResource CloseIcon}" Width="13" Height="13" Foreground="White"/>
+					</Button>
+				</StackPanel>
+
+				<StackPanel Orientation="Horizontal" Spacing="16" Margin="0,10,24,0" HorizontalAlignment="Right">
+					<StackPanel IsVisible="{Binding BepInExDownloadProgress, Converter={StaticResource GreaterThanZeroConverter}}" Spacing="6" VerticalAlignment="Center">
+						<ProgressBar Value="{Binding BepInExDownloadProgress}" Width="100" Height="6" Foreground="{DynamicResource SystemAccentBrush}"/>
+					</StackPanel>
+
+					<Button Command="{Binding InstallBepInExCommand}" IsVisible="{Binding !IsBepInstalled}" Classes="Filled" Content="SETUP ENGINE"/>
+
+					<ToggleButton IsChecked="{Binding IsSettingsOpen}" Classes="Icon">
+						<PathIcon Data="{StaticResource settings_regular}" Width="20" Height="20"/>
+					</ToggleButton>
+				</StackPanel>
+			</StackPanel>
+		</Grid>
+	</Panel>
+</UserControl>

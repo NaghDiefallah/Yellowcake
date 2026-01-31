@@ -1,26 +1,86 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Yellowcake.Services;
+using Yellowcake.ViewModels;
+using System;
+using System.IO;
+using System.Linq;
 
-namespace Yellowcake
+namespace Yellowcake;
+
+public partial class App : Application
 {
-    public partial class App : Application
+    private readonly ThemeService _themeService = new();
+
+    public override void Initialize()
     {
-        public override void Initialize()
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            AvaloniaXamlLoader.Load(this);
+            var databaseService = new DatabaseService();
+
+            ThemeService.Database = databaseService;
+            _themeService.Initialize();
+
+            var viewModel = new MainViewModel();
+
+            desktop.MainWindow = new MainWindow
+            {
+                DataContext = viewModel
+            };
+
+            HandleCommandLineArguments(desktop.Args, viewModel);
+
+            desktop.MainWindow.Closing += (s, e) =>
+            {
+                if (desktop.MainWindow.DataContext is MainViewModel vm && vm.MinimizeToTray)
+                {
+                    e.Cancel = true;
+                    desktop.MainWindow.Hide();
+                }
+            };
         }
 
-        public override void OnFrameworkInitializationCompleted()
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private void HandleCommandLineArguments(string[]? args, MainViewModel vm)
+    {
+        if (args == null || args.Length == 0) return;
+
+        if (args.Contains("--launch"))
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            if (vm.LaunchGameCommand.CanExecute(null))
             {
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = new ViewModels.MainViewModel()
-                };
+                vm.LaunchGameCommand.Execute(null);
             }
-            base.OnFrameworkInitializationCompleted();
         }
     }
+
+    public void ShowMainWindow()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } window })
+        {
+            window.Show();
+            if (window.WindowState == WindowState.Minimized)
+                window.WindowState = WindowState.Normal;
+
+            window.Activate();
+        }
+    }
+
+    public void Shutdown()
+    {
+        (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
+    }
+
+    private void OnTrayShowClick(object? sender, EventArgs e) => ShowMainWindow();
+
+    private void OnTrayExitClick(object? sender, EventArgs e) => Shutdown();
 }

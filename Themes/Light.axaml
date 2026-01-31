@@ -1,0 +1,45 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<SolidColorBrush x:Key="SystemAccentBrush">#FFB300</SolidColorBrush>
+	<SolidColorBrush x:Key="WarningBrush">#D32F2F</SolidColorBrush>
+
+	<SolidColorBrush x:Key="DeepBackgroundBrush">#F5F5F5</SolidColorBrush>
+	<SolidColorBrush x:Key="HeaderBackgroundBrush">#FFFFFF</SolidColorBrush>
+	<SolidColorBrush x:Key="FooterBackgroundBrush">#E0E0E0</SolidColorBrush>
+	<SolidColorBrush x:Key="CardBackgroundBrush">#FFFFFF</SolidColorBrush>
+	<SolidColorBrush x:Key="SettingsGroupBg">#FFFFFF</SolidColorBrush>
+
+	<SolidColorBrush x:Key="InputBackgroundBrush">#EEEEEE</SolidColorBrush>
+	<SolidColorBrush x:Key="InputBorderBrush">#CCCCCC</SolidColorBrush>
+	<SolidColorBrush x:Key="TonalButtonBg">#E0E0E0</SolidColorBrush>
+	<SolidColorBrush x:Key="TonalButtonText">#1A1A1A</SolidColorBrush>
+
+	<SolidColorBrush x:Key="MainTextBrush">#1A1A1A</SolidColorBrush>
+	<SolidColorBrush x:Key="SubTextBrush">#555555</SolidColorBrush>
+	<SolidColorBrush x:Key="DescriptionTextBrush">#333333</SolidColorBrush>
+	<SolidColorBrush x:Key="AuthorTextBrush">#777777</SolidColorBrush>
+	<SolidColorBrush x:Key="StatusLabelBrush">#888888</SolidColorBrush>
+	<SolidColorBrush x:Key="PathLabelBrush">#666666</SolidColorBrush>
+	<SolidColorBrush x:Key="EmptyTextBrush">#999999</SolidColorBrush>
+
+	<SolidColorBrush x:Key="EmptyIconBrush">#DDDDDD</SolidColorBrush>
+	<SolidColorBrush x:Key="SearchIconBrush">#888888</SolidColorBrush>
+
+	<SolidColorBrush x:Key="BorderBrush">#DCDCDC</SolidColorBrush>
+	<SolidColorBrush x:Key="DividerBrush">#E0E0E0</SolidColorBrush>
+
+	<SolidColorBrush x:Key="VoiceBadgeBg">#D0E1FD</SolidColorBrush>
+	<SolidColorBrush x:Key="VoiceBadgeText">#1C355E</SolidColorBrush>
+	<SolidColorBrush x:Key="LiveryBadgeBg">#C4EED0</SolidColorBrush>
+	<SolidColorBrush x:Key="LiveryBadgeText">#1E3E24</SolidColorBrush>
+	<SolidColorBrush x:Key="UpdateBadgeBg">#FFF0C2</SolidColorBrush>
+	<SolidColorBrush x:Key="CategoryBadgeBg">#E8E8E8</SolidColorBrush>
+
+	<SolidColorBrush x:Key="ToggleSwitchContainerBackgroundOn">#FFB300</SolidColorBrush>
+	<SolidColorBrush x:Key="ToggleSwitchContainerBackgroundOnPointerOver">#FFC107</SolidColorBrush>
+	<SolidColorBrush x:Key="ToggleSwitchContainerBackgroundOff">#CCCCCC</SolidColorBrush>
+	<SolidColorBrush x:Key="ToggleSwitchThumbBackgroundOn">#FFFFFF</SolidColorBrush>
+	<SolidColorBrush x:Key="ToggleSwitchThumbBackgroundOff">#FFFFFF</SolidColorBrush>
+	<SolidColorBrush x:Key="ToggleSwitchStrokeOn">#FFB300</SolidColorBrush>
+	<SolidColorBrush x:Key="ToggleSwitchStrokeOff">#AAAAAA</SolidColorBrush>
+</ResourceDictionary>

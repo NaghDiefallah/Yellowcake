@@ -1,15 +1,14 @@
-﻿using Serilog;
+﻿using Octokit;
+using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Yellowcake.Models;
-using Octokit;
-using Avalonia.Threading;
 
 namespace Yellowcake.Services;
 
@@ -21,6 +20,8 @@ public class ModService
     private readonly ManifestService _manifests;
     private readonly DownloadService _downloader;
 
+    private const string BepInExUrl = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.21/BepInEx_x64_5.4.21.0.zip";
+
     public ModService(DatabaseService db, InstallService installer, HttpClient client, GitHubClient github)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
@@ -29,167 +30,226 @@ public class ModService
         _manifests = new ManifestService(client);
         _downloader = new DownloadService(client, github);
 
-        Log.Information("ModService initialized.");
+        Log.Information("Mod service initialized.");
     }
 
     public string? LoadGamePath() => _db.GetSetting("GamePath");
 
     public void SaveGamePath(string path)
     {
-        Log.Information("Updating game path to: {Path}", path);
+        if (string.IsNullOrWhiteSpace(path)) return;
         _db.SaveSetting("GamePath", path);
-        _pathService.GamePath = path;
-    }
-
-    public void SetGamePath(string path)
-    {
         _pathService.SetGamePath(path);
-        _pathService.GamePath = path;
     }
 
-    public List<Mod> GetInstalledMods() => _db.GetAllMods();
+    public List<Mod> GetInstalledMods() => _db.GetAll<Mod>("addons");
 
     public bool IsBepInExInstalled()
     {
         var gameDir = GetGameDirectory();
-        return !string.IsNullOrEmpty(gameDir) && Directory.Exists(Path.Combine(gameDir, "BepInEx"));
+        return !string.IsNullOrWhiteSpace(gameDir) && Directory.Exists(Path.Combine(gameDir, "BepInEx"));
     }
 
     public async Task InstallBepInExAsync(string targetDir, IProgress<double> progress)
     {
         if (!Directory.Exists(targetDir))
-            throw new DirectoryNotFoundException($"Target directory not found: {targetDir}");
+            throw new DirectoryNotFoundException($"Target directory missing: {targetDir}");
 
-        const string url = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.21/BepInEx_x64_5.4.21.0.zip";
-        Log.Information("Downloading BepInEx framework...");
-
-        using var stream = await _downloader.DownloadWithProgress(url, progress.Report);
+        using var stream = await _downloader.DownloadWithProgress(BepInExUrl, null, progress);
         await _installer.ExtractBepInEx(stream, targetDir);
     }
 
     public Task<List<Mod>> FetchRemoteManifest() => _manifests.FetchRemoteManifest();
 
-    public async Task DownloadAndInstallMod(Mod mod, ObservableCollection<Mod> localList, List<Mod> manifest, CancellationToken ct = default)
+    public async Task DownloadAndInstallMod(Mod mod, IProgress<double>? progress, List<Mod> manifest, CancellationToken ct = default, string? effectiveHash = null)
     {
-        if (mod == null) throw new ArgumentNullException(nameof(mod));
+        if (mod == null) return;
 
-        Log.Information("Preparing installation for: {ModName}", mod.Name);
-        await InstallDependencies(mod, localList, manifest, ct);
+        Log.Information("Initializing installation for: {ModName}", mod.Name);
 
         try
         {
-            var (downloadUrl, tag) = await ResolveDownloadInfo(mod);
-            if (string.IsNullOrEmpty(downloadUrl))
+            Log.Debug("Resolving dependencies for {ModName}...", mod.Name);
+            await InstallDependencies(mod, manifest, ct);
+
+            var (url, tag) = await ResolveDownloadInfo(mod);
+            if (string.IsNullOrWhiteSpace(url))
             {
-                Log.Warning("No download URL resolved for {ModName}", mod.Name);
+                Log.Error("Failed to install {ModName}: No valid download URL resolved.", mod.Name);
                 return;
             }
 
-            using var stream = await _downloader.DownloadWithProgress(downloadUrl, p => mod.DownloadProgress = p, ct);
-            await ProcessModFiles(stream, downloadUrl, mod, tag, ct);
+            string? hashToVerify = effectiveHash ?? mod.ExpectedHash;
 
-            UpdateLocalList(localList, mod);
+            Log.Information("Downloading {ModName} from {Url}", mod.Name, url);
+            using var stream = await _downloader.DownloadWithProgress(url, hashToVerify, progress, ct);
+
+            Log.Information("Extracting and processing files for {ModName}...", mod.Name);
+            await ProcessModFiles(stream, mod, tag);
+
+            Log.Information("Installation completed successfully: {ModName}", mod.Name);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException)
         {
-            Log.Error(ex, "Installation failed for {Mod}", mod.Name);
-            NotificationService.Instance.Error($"Could not install {mod.Name}");
+            Log.Warning("Installation task aborted by user or system: {ModName}", mod.Name);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Critical failure during installation of {ModName}", mod.Name);
             throw;
         }
     }
 
     private async Task<(string? url, string tag)> ResolveDownloadInfo(Mod mod)
     {
-        if (string.IsNullOrWhiteSpace(mod.GitHubUrl)) return (null, mod.Version ?? "1.0.0");
+        string currentVersion = mod.Version ?? "1.0.0";
 
-        string url = mod.GitHubUrl;
+        if (!string.IsNullOrEmpty(mod.DownloadUrl))
+            return (mod.DownloadUrl, currentVersion);
 
-        if (url.Contains("/raw/") || url.EndsWith(".7z") || url.EndsWith(".zip") || url.EndsWith(".rar") || url.EndsWith(".dll"))
-        {
-            return (url, mod.Version ?? "1.0.0");
-        }
+        if (string.IsNullOrWhiteSpace(mod.GitHubUrl))
+            return (null, currentVersion);
+
+        string url = mod.GitHubUrl.TrimEnd('/');
+
+        if (url.EndsWith(".zip") || url.EndsWith(".7z") || url.EndsWith(".dll") || url.Contains("/raw/"))
+            return (url, currentVersion);
 
         try
         {
-            var uri = new Uri(url.TrimEnd('/'));
+            var uri = new Uri(url);
             var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
             if (segments.Length >= 2)
             {
                 var owner = segments[0];
-                var repo = segments[1].Replace(".git", "");
+                var repo = segments[1].Replace(".git", "", StringComparison.OrdinalIgnoreCase);
                 return await _downloader.GetLatestReleaseInfo(owner, repo);
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to resolve GitHub info for {ModName}", mod.Name);
+            Log.Error(ex, "GitHub lookup failed for {ModName}", mod.Name);
         }
 
-        return (url, mod.Version ?? "1.0.0");
+        return (url, currentVersion);
     }
 
-    private async Task ProcessModFiles(MemoryStream stream, string url, Mod mod, string tag, CancellationToken ct)
+    private async Task ProcessModFiles(MemoryStream stream, Mod mod, string tag)
     {
+        if (stream == null || stream.Length == 0)
+        {
+            Log.Error("ProcessModFiles failed: Provided stream is empty or null for {ModName}", mod?.Name);
+            return;
+        }
+
         var gameDir = GetGameDirectory();
+        if (string.IsNullOrWhiteSpace(mod.Id)) mod.Id = Guid.NewGuid().ToString();
 
-        if (string.IsNullOrEmpty(mod.Id))
-            mod.Id = Guid.NewGuid().ToString();
+        stream.Position = 0;
 
-        if (mod.Id.Contains("Yappinator", StringComparison.OrdinalIgnoreCase))
-            mod.Id = "WSOYappinator";
+        await Task.Run(async () =>
+        {
+            try
+            {
+                Log.Information("Starting extraction and categorization for {ModName} (Version: {Tag})", mod.Name, tag);
 
-        mod.Version = tag;
-        mod.IsEnabled = true;
+                await _installer.InstallCategorizedMod(mod, stream, gameDir);
 
-        await _installer.InstallCategorizedMod(mod, stream, gameDir);
+                if (ShouldLinkMod(mod))
+                {
+                    Log.Debug("Linking mod files for {ModName}...", mod.Name);
+                    _installer.LinkMod(mod.Id, gameDir, true);
+                }
 
-        _db.RegisterMod(mod);
-        ToggleMod(mod.Id, true);
+                mod.Version = tag;
+                mod.LatestVersion = tag;
+                mod.IsEnabled = true;
+                mod.IsInstalled = true;
+                mod.HasUpdate = false;
+
+                _db.Upsert("addons", mod);
+
+                Log.Information("Successfully processed and registered {ModName}", mod.Name);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Physical file processing failed for {ModName}", mod.Name);
+                throw;
+            }
+        });
     }
 
     public void ToggleMod(string id, bool enable)
     {
         var gameDir = GetGameDirectory();
-        var mod = _db.GetAllMods().FirstOrDefault(m => m.Id == id);
+        var mod = GetInstalledMods().FirstOrDefault(m => m.Id == id);
+
         if (mod == null || string.IsNullOrEmpty(gameDir)) return;
 
-        bool isStandardMod = !mod.IsVoicePack && mod.Category != "Audio" && !mod.IsLivery;
-        if (isStandardMod)
+        if (ShouldLinkMod(mod))
         {
             _installer.LinkMod(id, gameDir, enable);
         }
 
-        _db.UpdateModEnabled(id, enable);
+        mod.IsEnabled = enable;
+        _db.Upsert("addons", mod);
     }
 
     public void DeleteMod(string id)
     {
         ToggleMod(id, false);
         _installer.CleanupMods(id);
-        _db.DeleteMod(id);
+        _db.Delete("addons", id);
     }
 
-    private async Task InstallDependencies(Mod mod, ObservableCollection<Mod> local, List<Mod> manifest, CancellationToken ct)
+    public bool IsUpdateAvailable(Mod local, Mod remote)
+    {
+        if (string.IsNullOrWhiteSpace(local.Version) || string.IsNullOrWhiteSpace(remote.Version))
+            return false;
+
+        var vLocal = CleanVersion(local.Version);
+        var vRemote = CleanVersion(remote.Version);
+
+        if (Version.TryParse(vLocal, out var verL) && Version.TryParse(vRemote, out var verR))
+            return verR > verL;
+
+        return !string.Equals(vLocal, vRemote, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string CleanVersion(string v)
+    {
+        var match = Regex.Match(v, @"(\d+\.)*(\d+)");
+        return match.Success ? match.Value : "0.0.0";
+    }
+
+    private bool ShouldLinkMod(Mod mod)
+    {
+        return !mod.IsVoicePack &&
+               !mod.IsLivery &&
+               !string.Equals(mod.Category, "Data", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task InstallDependencies(Mod mod, List<Mod> manifest, CancellationToken ct)
     {
         if (mod.Dependencies == null || !mod.Dependencies.Any()) return;
 
+        var installed = GetInstalledMods().Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         foreach (var depId in mod.Dependencies)
         {
-            if (ct.IsCancellationRequested) break;
+            if (ct.IsCancellationRequested || installed.Contains(depId)) continue;
 
-            bool isInstalled = local.Any(m => string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase));
-            if (isInstalled) continue;
-
-            var dep = manifest?.FirstOrDefault(m => string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase));
-            if (dep != null)
+            var dependency = manifest.FirstOrDefault(m => string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase));
+            if (dependency != null)
             {
-                await DownloadAndInstallMod(dep, local, manifest, ct);
+                await DownloadAndInstallMod(dependency, null, manifest, ct);
             }
         }
     }
 
-    private string GetGameDirectory()
+    public string GetGameDirectory()
     {
         var path = _pathService.GamePath ?? LoadGamePath();
         if (string.IsNullOrEmpty(path)) return string.Empty;
@@ -197,19 +257,58 @@ public class ModService
         return File.Exists(path) ? Path.GetDirectoryName(path) ?? string.Empty : path;
     }
 
-    private void UpdateLocalList(ObservableCollection<Mod> localList, Mod mod)
+    public void CreateDesktopShortcut()
     {
-        Dispatcher.UIThread.Post(() =>
+        try
         {
-            var existing = localList.FirstOrDefault(m => m.Id == mod.Id);
-            if (existing != null)
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string shortcutPath = Path.Combine(desktop, "Nuclear Option (Modded).lnk");
+            string? exePath = _pathService.GamePath ?? LoadGamePath();
+
+            if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
             {
-                int index = localList.IndexOf(existing);
-                localList[index] = mod;
+                NotificationService.Instance.Error("Game executable not found.");
+                return;
             }
-            else
+
+            Type t = Type.GetTypeFromProgID("WScript.Shell")!;
+            dynamic shell = Activator.CreateInstance(t)!;
+            var shortcut = shell.CreateShortcut(shortcutPath);
+
+            shortcut.TargetPath = exePath;
+            shortcut.WorkingDirectory = Path.GetDirectoryName(exePath);
+            shortcut.Description = "Launch Nuclear Option with Mods";
+            shortcut.Save();
+
+            NotificationService.Instance.Success("Shortcut created on desktop.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Shortcut creation failed");
+            NotificationService.Instance.Error("Failed to create shortcut.");
+        }
+    }
+
+    public async Task RemoveBepInEx()
+    {
+        await Task.Run(() =>
+        {
+            var gameDir = GetGameDirectory();
+            if (string.IsNullOrEmpty(gameDir)) return;
+
+            string[] targets = { "BepInEx", "doorstop_config.ini", "winhttp.dll", "changelog.txt", "doorstop_libs" };
+            foreach (var target in targets)
             {
-                localList.Add(mod);
+                string path = Path.Combine(gameDir, target);
+                try
+                {
+                    if (Directory.Exists(path)) Directory.Delete(path, true);
+                    else if (File.Exists(path)) File.Delete(path);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning("Could not delete {Path}: {Message}", path, ex.Message);
+                }
             }
         });
     }
