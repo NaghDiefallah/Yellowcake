@@ -1,4 +1,4 @@
-name: Cross-Platform Build, Package, Installers, Release
+name: Cross-Platform Build
 
 on:
   push:
@@ -6,155 +6,74 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: pipeline-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  DOTNET_NOLOGO: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
-  CONFIGURATION: Release
-
 jobs:
   build:
-    name: ${{ matrix.name }}
+    name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-
     strategy:
-      fail-fast: false
       matrix:
         include:
-          - name: Windows x64
-            os: windows-latest
+          - os: windows-latest
             rid: win-x64
-            platform: windows
-            exe: Yellowcake.exe
-
-          - name: Linux x64
-            os: ubuntu-latest
+            artifact_name: Yellowcake-Windows
+            asset_path: ./publish/win-x64/Yellowcake.exe
+          - os: ubuntu-latest
             rid: linux-x64
-            platform: linux
-            exe: Yellowcake
-
-          - name: macOS Apple Silicon
-            os: macos-latest
+            artifact_name: Yellowcake-Linux
+            asset_path: ./Yellowcake-x86_64.AppImage
+          - os: macos-latest
             rid: osx-arm64
-            platform: macos
-            exe: Yellowcake
+            artifact_name: Yellowcake-MacOS-Silicon
+            asset_path: ./publish/osx-arm64/Yellowcake
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v4
 
-      - id: version
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            echo "value=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-          else
-            echo "value=0.0.0-dev+${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          fi
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
+    - name: Restore dependencies
+      run: dotnet restore
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
-          restore-keys: nuget-${{ runner.os }}-
+    - name: Publish
+      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish/${{ matrix.rid }}
 
-      - run: dotnet restore
+    # Linux-only: Generate AppImage
+    - name: Create AppImage
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update && sudo apt-get install -y fuse
+        wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool
+        mkdir -p AppDir/usr/bin
+        cp ./publish/linux-x64/Yellowcake AppDir/usr/bin/
+        cp Resources/icon.png AppDir/Yellowcake.png
+        echo -e "[Desktop Entry]\nName=Yellowcake\nExec=Yellowcake\nIcon=Yellowcake\nType=Application\nCategories=Game;" > AppDir/Yellowcake.desktop
+        echo -e '#!/bin/sh\nexec "$(dirname "$0")/usr/bin/Yellowcake" "$@"' > AppDir/AppRun
+        chmod +x AppDir/AppRun
+        ARCH=x86_64 ./appimagetool AppDir Yellowcake-x86_64.AppImage
 
-      - run: >
-          dotnet publish
-          -c $CONFIGURATION
-          -r ${{ matrix.rid }}
-          --self-contained true
-          -p:PublishSingleFile=true
-          -p:PublishTrimmed=true
-          -p:TrimMode=partial
-          -p:PublishReadyToRun=true
-          -p:Deterministic=true
-          -p:ContinuousIntegrationBuild=true
-          -p:Version=${{ steps.version.outputs.value }}
-          -p:FileVersion=${{ steps.version.outputs.value }}
-          -p:InformationalVersion=${{ steps.version.outputs.value }}
-          -o dist/${{ matrix.platform }}
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.asset_path }}
 
-      - shell: bash
-        run: |
-          mkdir -p release/bin/${{ matrix.platform }}
-          mv dist/${{ matrix.platform }}/${{ matrix.exe }} release/bin/${{ matrix.platform }}/Yellowcake
-
-      - if: matrix.platform == 'windows'
-        shell: powershell
-        run: |
-          choco install wixtoolset -y
-          mkdir installer
-          copy release\bin\windows\Yellowcake installer\Yellowcake.exe
-          echo '<?xml version="1.0"?><Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"><Product Name="Yellowcake" Version="${{ steps.version.outputs.value }}" Manufacturer="Yellowcake" UpgradeCode="A1B2C3D4-E5F6-47A8-B9C0-123456789000"><Package InstallerVersion="500" Compressed="yes"/><MediaTemplate/><Directory Id="TARGETDIR" Name="SourceDir"><Directory Id="ProgramFilesFolder"><Directory Id="INSTALLDIR" Name="Yellowcake"><Component Id="Main" Guid="B1C2D3E4-F5A6-47A8-B9C0-123456789111"><File Source="installer\Yellowcake.exe"/></Component></Directory></Directory></Directory><Feature Id="Default" Level="1"><ComponentRef Id="Main"/></Feature></Product></Wix>' > installer.wxs
-          candle installer.wxs
-          light installer.wixobj -o Yellowcake-${{ steps.version.outputs.value }}-windows-x64.msi
-
-      - if: matrix.platform == 'linux'
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y dpkg-dev fuse
-          mkdir -p pkg/usr/bin pkg/DEBIAN
-          cp release/bin/linux/Yellowcake pkg/usr/bin/yellowcake
-          chmod +x pkg/usr/bin/yellowcake
-          printf "Package: yellowcake\nVersion: %s\nSection: games\nPriority: optional\nArchitecture: amd64\nMaintainer: Yellowcake\nDescription: Yellowcake\n" "${{ steps.version.outputs.value }}" > pkg/DEBIAN/control
-          dpkg-deb --build pkg Yellowcake-${{ steps.version.outputs.value }}-linux-x64.deb
-
-      - if: matrix.platform == 'macos'
-        shell: bash
-        run: |
-          mkdir -p pkgroot/Applications/Yellowcake
-          cp release/bin/macos/Yellowcake pkgroot/Applications/Yellowcake/
-          pkgbuild --root pkgroot --identifier com.yellowcake.app --version ${{ steps.version.outputs.value }} Yellowcake-${{ steps.version.outputs.value }}-macos-arm64.pkg
-
-      - shell: bash
-        run: |
-          tar -czf Yellowcake-${{ steps.version.outputs.value }}-${{ matrix.platform }}-${{ matrix.rid }}-portable.tar.gz -C release/bin/${{ matrix.platform }} .
-
-      - shell: bash
-        run: |
-          for f in *.tar.gz *.msi *.deb *.pkg; do
-            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
-          done
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Yellowcake-${{ matrix.platform }}
-          path: |
-            *.tar.gz
-            *.msi
-            *.deb
-            *.pkg
-            *.sha256
-
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          tag_name: v${{ steps.version.outputs.value }}
-          name: Yellowcake v${{ steps.version.outputs.value }}
-          files: |
-            *.tar.gz
-            *.msi
-            *.deb
-            *.pkg
-            *.sha256
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ${{ matrix.asset_path }}
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
