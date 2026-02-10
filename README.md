@@ -1,6 +1,6 @@
 ﻿# 🟡 Yellowcake Mod Manager
 
-> **Professional mod management solution for Nuclear Option**
+> **Modern free and open-source Mod Manager**
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Avalonia UI](https://img.shields.io/badge/Avalonia-11.0+-8B44AC?logo=avalonia)](https://avaloniaui.net/)
@@ -136,11 +136,13 @@ A powerful, modern desktop application for managing mods in Nuclear Option. Buil
 4. On first launch, set your Nuclear Option game path
 
 ### Linux
+```
 wget https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-linux-x64.tar.gz tar -xzf Yellowcake-linux-x64.tar.gz chmod +x Yellowcake ./Yellowcake
-
+```
 ### macOS
+```
 curl -L https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-osx-x64.zip -o Yellowcake.zip unzip Yellowcake.zip chmod +x Yellowcake.app/Contents/MacOS/Yellowcake open Yellowcake.app
-
+```
 
 ---
 
