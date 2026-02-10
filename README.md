@@ -1,4 +1,4 @@
-﻿# 🟡 Yellowcake Mod Manager
+﻿# Yellowcake Mod Manager
 
 > **Modern free and open-source Mod Manager**
 
@@ -8,8 +8,6 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)]()
 
 A powerful, modern desktop application for managing mods in Nuclear Option. Built with .NET 10 and Avalonia UI, Yellowcake provides a seamless experience for browsing, installing, and managing game modifications.
-
-![Yellowcake Banner](https://via.placeholder.com/1200x300/2C2F33/FFCC00?text=Yellowcake+Mod+Manager)
 
 ---
 
@@ -233,7 +231,7 @@ Yellowcake includes multiple themes:
 
 - **Dark** (Default) - Modern dark theme
 - **Light** - Clean light theme
-- **Synthium** - Purple accent theme
+- **Synthium** - Gree accent theme made for 
 
 **Custom Themes:**
 1. Navigate to `%AppData%/Yellowcake/Themes` (Windows)
@@ -269,7 +267,9 @@ Yellowcake includes multiple themes:
 - Git
 
 ### Building from Source
+```
 git clone https://github.com/NaghDiefallah/Yellowcake.git cd Yellowcake dotnet restore dotnet build dotnet run
+```
 
 ### Key Dependencies
 
@@ -313,7 +313,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/NaghDiefallah/Yellowcake/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/NaghDiefallah/Yellowcake/discussions)
-- **Discord**: [Join our Discord](#)
 
 ---
 
