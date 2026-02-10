@@ -16,57 +16,108 @@
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1" />
 
-		<Grid ColumnDefinitions="Auto, *, Auto" Margin="24,0,0,0">
-			<StackPanel Orientation="Horizontal" Spacing="28" VerticalAlignment="Center">
+		<Grid ColumnDefinitions="Auto, *, Auto">
+			<StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="28"
+                        VerticalAlignment="Center"
+                        Margin="24,0,0,0">
+
 				<StackPanel Spacing="-2">
-					<TextBlock Text="YELLOWCAKE" FontWeight="Black" FontSize="24" Foreground="{DynamicResource SystemAccentBrush}" LetterSpacing="3"/>
-					<TextBlock Text="MOD MANAGER" FontSize="10" FontWeight="Bold" Opacity="0.6" Margin="2,0,0,0"/>
+					<TextBlock Text="YELLOWCAKE"
+                               FontWeight="Black"
+                               FontSize="24"
+                               Foreground="{DynamicResource SystemAccentBrush}"
+                               LetterSpacing="3"/>
+					<TextBlock Text="MOD MANAGER"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Opacity="0.6"
+                               Margin="2,0,0,0"/>
 				</StackPanel>
 
 				<Rectangle Width="1" Height="36" Fill="{DynamicResource DividerBrush}"/>
 
 				<StackPanel Spacing="4">
-					<TextBlock Text="SYSTEM STATUS" FontSize="10" FontWeight="Black" Opacity="0.5"/>
+					<TextBlock Text="SYSTEM STATUS"
+                               FontSize="10"
+                               FontWeight="Black"
+                               Opacity="0.5"/>
 					<StackPanel Orientation="Horizontal" Spacing="8">
-						<Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{Binding IsGameDetected, Converter={StaticResource StatusColorConverter}}"/>
-						<TextBlock Text="{Binding GameStatus}" FontSize="14" FontWeight="Medium"/>
+						<Ellipse Width="8" Height="8"
+                                 VerticalAlignment="Center"
+                                 Fill="{Binding IsGameDetected, Converter={StaticResource StatusColorConverter}}"/>
+						<TextBlock Text="{Binding GameStatus}"
+                                   FontSize="14"
+                                   FontWeight="Medium"/>
 					</StackPanel>
 				</StackPanel>
 			</StackPanel>
 
-			<StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Right">
-				<StackPanel Orientation="Horizontal">
+			<StackPanel Grid.Column="2" VerticalAlignment="Top">
+				<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 					<Button Click="MinimizeWindow_Click"
-							Classes="WindowControl Min"
-							Width="46" Height="32"
-							ToolTip.Tip="Minimize">
-						<PathIcon Data="{StaticResource MinIcon}" Width="13" Height="13" Foreground="White"/>
+                            Classes="WindowControl"
+                            ToolTip.Tip="Minimize">
+						<PathIcon Data="{StaticResource MinIcon}" Width="12" Height="12"/>
 					</Button>
 
 					<Button Click="MaximizeWindow_Click"
-							Classes="WindowControl Max"
-							Width="46" Height="32"
-							ToolTip.Tip="Maximize">
-						<PathIcon Data="{StaticResource MaxIcon}" Width="13" Height="13" Foreground="White"/>
+                            Classes="WindowControl"
+                            ToolTip.Tip="Maximize">
+						<PathIcon Data="{StaticResource MaxIcon}" Width="12" Height="12"/>
 					</Button>
 
 					<Button Click="CloseWindow_Click"
-							Classes="WindowControl Close"
-							Width="46" Height="32"
-							ToolTip.Tip="Close">
-						<PathIcon Data="{StaticResource CloseIcon}" Width="13" Height="13" Foreground="White"/>
+                            Classes="WindowControl Close"
+                            ToolTip.Tip="Close">
+						<PathIcon Data="{StaticResource CloseIcon}" Width="12" Height="12"/>
 					</Button>
 				</StackPanel>
 
-				<StackPanel Orientation="Horizontal" Spacing="16" Margin="0,10,24,0" HorizontalAlignment="Right">
-					<StackPanel IsVisible="{Binding BepInExDownloadProgress, Converter={StaticResource GreaterThanZeroConverter}}" Spacing="6" VerticalAlignment="Center">
-						<ProgressBar Value="{Binding BepInExDownloadProgress}" Width="100" Height="6" Foreground="{DynamicResource SystemAccentBrush}"/>
+				<StackPanel Orientation="Horizontal"
+                            Spacing="16"
+                            Margin="0,8,16,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+
+					<StackPanel IsVisible="{Binding BepInExDownloadProgress, Converter={StaticResource GreaterThanZeroConverter}}"
+                                Spacing="6"
+                                VerticalAlignment="Center">
+						<TextBlock Text="Downloading Engine..." FontSize="10" Opacity="0.7" HorizontalAlignment="Right"/>
+						<ProgressBar Value="{Binding BepInExDownloadProgress}"
+                                     Width="120"
+                                     Height="4"
+                                     Foreground="{DynamicResource SystemAccentBrush}"/>
 					</StackPanel>
 
-					<Button Command="{Binding InstallBepInExCommand}" IsVisible="{Binding !IsBepInstalled}" Classes="Filled" Content="SETUP ENGINE"/>
+					<Button Command="{Binding InstallSelectedVersionCommand}"
+                            IsVisible="{Binding !IsBepInstalled}"
+                            Classes="Filled"
+                            Content="SETUP ENGINE"
+                            Height="32"
+                            VerticalContentAlignment="Center"/>
 
-					<ToggleButton IsChecked="{Binding IsSettingsOpen}" Classes="Icon">
-						<PathIcon Data="{StaticResource settings_regular}" Width="20" Height="20"/>
+					<!-- Utility Icons -->
+					<ToggleButton IsChecked="{Binding IsPerformanceDashboardOpen}"
+                                  Classes="Icon"
+                                  Width="32" Height="32"
+								  ToolTip.Tip="Performance Dashboard">
+						<PathIcon Data="{StaticResource StatsIcon}" Width="18" Height="18"/>
+					</ToggleButton>
+
+					<ToggleButton IsChecked="{Binding IsLogViewerOpen}"
+                                  Classes="Icon"
+                                  Width="32" Height="32"
+								  ToolTip.Tip="Log Viewer">
+						<PathIcon Data="{StaticResource TerminalIcon}" Width="18" Height="18"/>
+					</ToggleButton>
+
+					<ToggleButton IsChecked="{Binding IsSettingsOpen}"
+                                  Classes="Icon"
+                                  Width="32" Height="32"
+								  ToolTip.Tip="Settings">
+						<PathIcon Data="{StaticResource settings_regular}" Width="18" Height="18"/>
 					</ToggleButton>
 				</StackPanel>
 			</StackPanel>

@@ -3,234 +3,419 @@
              xmlns:vm="using:Yellowcake.ViewModels"
              x:Class="Yellowcake.Views.SettingsView"
              x:DataType="vm:MainViewModel">
-    <ScrollViewer Padding="0,0,16,0">
-        <StackPanel Spacing="24" Margin="4,12">
-			<StackPanel Spacing="4">
-				<TextBlock Text="SETTINGS" FontSize="28" FontWeight="Black" Foreground="{DynamicResource SystemAccentBrush}" LetterSpacing="2"/>
-				<TextBlock Text="Manage your application behavior and mod preferences" FontSize="13" Opacity="0.6"/>
-			</StackPanel>
+    
+    <ScrollViewer Padding="16,0">
+        <StackPanel Spacing="28" Margin="8,16,8,32" MaxWidth="900">
+            
             <StackPanel Spacing="8">
-                <TextBlock Text="General Preferences" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource MainTextBrush}" Margin="4,0"/>
-                <Border Background="{DynamicResource SettingsGroupBg}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                    <StackPanel Spacing="16">
+                <TextBlock Text="SETTINGS" 
+                          FontSize="32" 
+                          FontWeight="Black" 
+                          Foreground="{DynamicResource SystemAccentBrush}" 
+                          LetterSpacing="3"/>
+                <TextBlock Text="Configure your mod manager and game preferences" 
+                          FontSize="14" 
+                          Foreground="{DynamicResource SubTextBrush}" 
+                          Opacity="0.8"/>
+            </StackPanel>
+
+            <StackPanel Spacing="12">
+                <TextBlock Text="General" 
+                          FontWeight="Bold" 
+                          FontSize="18" 
+                          Foreground="{DynamicResource MainTextBrush}" 
+                          Margin="0,0,0,4"/>
+                
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                       CornerRadius="12" 
+                       Padding="20" 
+                       BorderBrush="{DynamicResource BorderBrush}" 
+                       BorderThickness="1">
+                    <StackPanel Spacing="20">
+                        
                         <Grid ColumnDefinitions="*, Auto">
-                            <StackPanel Spacing="2">
-                                <TextBlock Text="Auto-Update Mods" FontWeight="SemiBold"/>
-                                <TextBlock Text="Sync installed mods with latest versions on startup" FontSize="11" Foreground="{DynamicResource SubTextBrush}"/>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Auto-Update Mods" 
+                                          FontWeight="SemiBold" 
+                                          FontSize="15"/>
+                                <TextBlock Text="Automatically check and sync installed mods on startup" 
+                                          FontSize="12" 
+                                          Foreground="{DynamicResource SubTextBrush}" 
+                                          Opacity="0.9"/>
                             </StackPanel>
-                            <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoUpdateMods}" Theme="{StaticResource FluentToggleSwitchTheme}"/>
+                            <ToggleSwitch Grid.Column="1" 
+                                         IsChecked="{Binding AutoUpdateMods}" 
+                                         VerticalAlignment="Center"/>
                         </Grid>
-						<Grid ColumnDefinitions="*, Auto">
-							<StackPanel Spacing="2">
-								<TextBlock Text="Use Backup Manifest" FontWeight="SemiBold"/>
-								<TextBlock Text="Use the secondary manifest, only use this in the case of the primary manifest failing." FontSize="11" Foreground="{DynamicResource SubTextBrush}"/>
-							</StackPanel>
-							<ToggleSwitch Grid.Column="1" IsChecked="{Binding UseSecondaryManifest}" Theme="{StaticResource FluentToggleSwitchTheme}"/>
-						</Grid>
-						<Grid ColumnDefinitions="*, Auto">
-							<StackPanel Spacing="2">
-								<TextBlock Text="System Tray" FontWeight="SemiBold"/>
-								<TextBlock Text="Keep manager running in background when closed" FontSize="11" Foreground="{DynamicResource SubTextBrush}"/>
-							</StackPanel>
-							<ToggleSwitch Grid.Column="1" IsChecked="{Binding MinimizeToTray}" Theme="{StaticResource FluentToggleSwitchTheme}"/>
-						</Grid>
+
+                        <Separator Height="1" Background="{DynamicResource BorderBrush}" Opacity="0.3"/>
+
+                        <Grid ColumnDefinitions="*, Auto">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="System Tray" 
+                                          FontWeight="SemiBold" 
+                                          FontSize="15"/>
+                                <TextBlock Text="Keep manager running in background when closed" 
+                                          FontSize="12" 
+                                          Foreground="{DynamicResource SubTextBrush}" 
+                                          Opacity="0.9"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" 
+                                         IsChecked="{Binding MinimizeToTray}" 
+                                         VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Separator Height="1" Background="{DynamicResource BorderBrush}" Opacity="0.3"/>
+
+                        <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Mod Repository Source" 
+                                          FontWeight="SemiBold" 
+                                          FontSize="15"/>
+                                <TextBlock Text="Choose which repository to fetch mods from" 
+                                          FontSize="12" 
+                                          Foreground="{DynamicResource SubTextBrush}" 
+                                          Opacity="0.9"/>
+                            </StackPanel>
+                            
+                            <ComboBox Grid.Column="1" 
+                                     ItemsSource="{Binding ManifestSources}"
+                                     SelectedItem="{Binding SelectedSource}"
+                                     Width="280"
+                                     VerticalAlignment="Center">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Key}" FontWeight="Medium"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="1" 
+                                      Grid.Column="1" 
+                                      Text="{Binding SelectedSource.Value}"
+                                      FontSize="10"
+                                      Foreground="{DynamicResource SubTextBrush}"
+                                      Opacity="0.6"
+                                      TextWrapping="Wrap"
+                                      Width="280"
+                                      Margin="0,6,0,0"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
             </StackPanel>
 
-            <StackPanel Spacing="8">
-                <TextBlock Text="Interface" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource MainTextBrush}" Margin="4,0"/>
-                <Border Background="{DynamicResource SettingsGroupBg}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                    <Grid ColumnDefinitions="*, Auto">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="Active Theme" FontWeight="SemiBold"/>
-                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4">
-                                <Button Command="{Binding RefreshThemesCommand}" Content="Reload" FontSize="11" Classes="Tonal"/>
-                                <Button Command="{Binding OpenThemesFolderCommand}" Content="Themes Folder" FontSize="11" Classes="Tonal"/>
-                            </StackPanel>
+            <StackPanel Spacing="12">
+                <TextBlock Text="Appearance" 
+                          FontWeight="Bold" 
+                          FontSize="18" 
+                          Foreground="{DynamicResource MainTextBrush}" 
+                          Margin="0,0,0,4"/>
+                
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                       CornerRadius="12" 
+                       Padding="20" 
+                       BorderBrush="{DynamicResource BorderBrush}" 
+                       BorderThickness="1">
+                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Active Theme" 
+                                      FontWeight="SemiBold" 
+                                      FontSize="15"/>
+                            <TextBlock Text="Customize the visual style of your manager" 
+                                      FontSize="12" 
+                                      Foreground="{DynamicResource SubTextBrush}" 
+                                      Opacity="0.9"/>
                         </StackPanel>
-                        <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableThemes}" SelectedItem="{Binding SelectedTheme}" Width="180"/>
+                        
+                        <ComboBox Grid.Column="1" 
+                                 ItemsSource="{Binding AvailableThemes}" 
+                                 SelectedItem="{Binding SelectedTheme}" 
+                                 Width="200"
+                                 VerticalAlignment="Center"/>
+
+                        <StackPanel Grid.Row="1" 
+                                   Grid.ColumnSpan="2" 
+                                   Orientation="Horizontal" 
+                                   Spacing="10" 
+                                   Margin="0,16,0,0">
+                            <Button Command="{Binding RefreshThemesCommand}" 
+                                   Classes="Tonal" 
+                                   Height="36" 
+                                   Padding="16,0">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource RefreshIcon}" Width="12" Height="12"/>
+                                    <TextBlock Text="Reload Themes"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding OpenThemesFolderCommand}" 
+                                   Classes="Tonal" 
+                                   Height="36" 
+                                   Padding="16,0">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource FolderIcon}" Width="12" Height="12"/>
+                                    <TextBlock Text="Themes Folder"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </Border>
             </StackPanel>
 
-			<StackPanel Spacing="12">
-				<TextBlock Text="Configuration &amp; Mod Sharing"
-						   FontWeight="SemiBold"
-						   FontSize="13"
-						   Opacity="0.5"
-						   Foreground="{DynamicResource MainTextBrush}"
-						   Margin="4,0"/>
+            <StackPanel Spacing="12">
+                <TextBlock Text="Mod Library" 
+                          FontWeight="Bold" 
+                          FontSize="18" 
+                          Foreground="{DynamicResource MainTextBrush}" 
+                          Margin="0,0,0,4"/>
+                
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                       CornerRadius="12" 
+                       BorderBrush="{DynamicResource BorderBrush}" 
+                       BorderThickness="1"
+                       ClipToBounds="True">
+                    <StackPanel>
+                        
+                        <Border Padding="20">
+                            <StackPanel Spacing="18">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Grid.Column="0"
+                                           Background="{DynamicResource SystemAccentBrushLight}"
+                                           CornerRadius="8"
+                                           Width="40"
+                                           Height="40"
+                                           VerticalAlignment="Top"
+                                           Margin="0,0,14,0">
+                                        <PathIcon Data="{StaticResource BoxIcon}" 
+                                                 Width="18" 
+                                                 Height="18"
+                                                 Foreground="{DynamicResource SystemAccentBrush}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <StackPanel Grid.Column="1" Spacing="6">
+                                        <TextBlock Text="Library Sync Code" 
+                                                  FontSize="16" 
+                                                  FontWeight="SemiBold"/>
+                                        <TextBlock Text="Share your mod setup or restore from a previous configuration"
+                                                  FontSize="12"
+                                                  Foreground="{DynamicResource SubTextBrush}"
+                                                  Opacity="0.85"
+                                                  TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
 
-				<Border Background="{DynamicResource CardBackgroundBrush}"
-						CornerRadius="12"
-						BorderBrush="{DynamicResource BorderBrush}"
-						BorderThickness="1"
-						ClipToBounds="True">
-					<StackPanel>
-						<Border Padding="20,16">
-							<StackPanel Spacing="12">
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<PathIcon Data="{StaticResource ShareIcon}" Width="12" Height="12"
-											  Foreground="{DynamicResource SystemAccentBrush}" Opacity="0.8"/>
-									<TextBlock Text="Quick Sync" FontSize="14" FontWeight="SemiBold"/>
-								</StackPanel>
+                                <Grid ColumnDefinitions="*, Auto, Auto">
+                                    <TextBox Grid.Column="0"
+                                            Text="{Binding SettingsShareCode}"
+                                            Watermark="Paste sync code here..."
+                                            Height="46"
+                                            VerticalContentAlignment="Center"
+                                            CornerRadius="8"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1"
+                                            Padding="14,0"
+                                            FontSize="13"
+                                            FontFamily="Consolas, Courier New"/>
 
-								<Grid ColumnDefinitions="*, Auto">
-									<TextBox Text="{Binding SettingsShareCode}"
-											 Watermark="Enter or paste a sync code..."
-											 Height="40"
-											 VerticalContentAlignment="Center"
-											 CornerRadius="8,0,0,8"
-											 BorderBrush="{DynamicResource BorderBrush}"
-											 BorderThickness="1,1,0,1"
-											 Padding="12,0"/>
+                                    <Button Grid.Column="1"
+                                           Content="Apply"
+                                           Command="{Binding ApplyShareCodeCommand}"
+                                           Classes="Filled"
+                                           Height="46"
+                                           Padding="24,0"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Stretch"/>
 
-									<Button Grid.Column="1"
-											Content="Apply"
-											Command="{Binding ApplyShareCodeCommand}"
-											Classes="Filled"
-											Height="40"
-											Padding="24,0"
-											CornerRadius="0,8,8,0"
-											VerticalAlignment="Stretch"
-											VerticalContentAlignment="Center"/>
-								</Grid>
+                                    <Button Grid.Column="2"
+                                           Command="{Binding GenerateShareCodeCommand}"
+                                           Classes="Tonal"
+                                           Height="46"
+                                           Padding="24,0"
+                                           ToolTip.Tip="Generate a code from your current mods">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <PathIcon Data="{StaticResource RefreshIcon}" Width="13" Height="13"/>
+                                            <TextBlock Text="Generate" FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
-								<DockPanel LastChildFill="True">
-									<Button DockPanel.Dock="Right"
-											Command="{Binding GenerateShareCodeCommand}"
-											Classes="Link"
-											Padding="0"
-											Height="20"
-											MinHeight="0"
-											VerticalAlignment="Center">
-										<StackPanel Orientation="Horizontal" Spacing="4">
-											<TextBlock Text="Generate my own code"
-													   FontSize="11"
-													   FontWeight="Medium"
-													   Foreground="{DynamicResource SystemAccentBrush}"/>
-											<PathIcon Data="{StaticResource ChevronRightIcon}"
-													  Width="8" Height="8"
-													  Foreground="{DynamicResource SystemAccentBrush}"
-													  Opacity="0.8"/>
-										</StackPanel>
-									</Button>
+                        <Separator Height="1" Background="{DynamicResource BorderBrush}" Opacity="0.3"/>
 
-									<TextBlock Text="Match your library to a shared configuration."
-											   FontSize="11"
-											   Opacity="0.5"
-											   VerticalAlignment="Center"
-											   TextWrapping="Wrap"
-											   Margin="0,0,12,0"/>
-								</DockPanel>
-							</StackPanel>
-						</Border>
+                        <Border Padding="20,16">
+                            <StackPanel Spacing="14">
+                                <TextBlock Text="Backup"
+                                          FontSize="14"
+                                          FontWeight="SemiBold"
+                                          Opacity="0.9"/>
+                                
+                                <Grid ColumnDefinitions="*, *">
+                                    <Button Grid.Column="0"
+                                           Command="{Binding ExportModListCommand}"
+                                           Classes="Tonal"
+                                           HorizontalAlignment="Stretch"
+                                           Height="52">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                                            <PathIcon Data="{StaticResource ArrowBottomIcon}" 
+                                                     Width="14" 
+                                                     Height="14"
+                                                     RenderTransform="rotate(180deg)"/>
+                                            <TextBlock Text="Export List" FontWeight="SemiBold" FontSize="13"/>
+                                        </StackPanel>
+                                    </Button>
 
-						<Separator Height="1" Background="{DynamicResource BorderBrush}" Opacity="0.3" Margin="0"/>
+                                    <Button Grid.Column="1"
+                                           Command="{Binding ImportModListCommand}"
+                                           Classes="Tonal"
+                                           HorizontalAlignment="Stretch"
+                                           Height="52">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                                            <PathIcon Data="{StaticResource ArrowBottomIcon}" 
+                                                     Width="14" 
+                                                     Height="14"/>
+                                            <TextBlock Text="Import List" FontWeight="SemiBold" FontSize="13"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
 
-						<Grid ColumnDefinitions="*, 1, *">
-							<Button Grid.Column="0"
-									Command="{Binding ExportModListCommand}"
-									Background="Transparent"
-									BorderThickness="0"
-									HorizontalAlignment="Stretch"
-									VerticalAlignment="Stretch"
-									Height="54"
-									CornerRadius="0">
-								<Button.Styles>
-									<Style Selector="Button:pointerover /template/ ContentPresenter">
-										<Setter Property="Background" Value="#0AFFFFFF"/>
-									</Style>
-								</Button.Styles>
-								<StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-									<PathIcon Data="{StaticResource ExportIcon}" Width="14" Height="14"
-											  Foreground="{DynamicResource SystemAccentBrush}"/>
-									<TextBlock Text="Backup List" FontWeight="Medium" FontSize="13"/>
-								</StackPanel>
-							</Button>
+                                <TextBlock Text="Export creates a JSON file with your mod list. Import restores mods from a file."
+                                          FontSize="11"
+                                          Foreground="{DynamicResource SubTextBrush}"
+                                          Opacity="0.7"
+                                          TextWrapping="Wrap"
+                                          Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
-							<Rectangle Grid.Column="1" Width="1" Height="20"
-									   Fill="{DynamicResource BorderBrush}" Opacity="0.3"
-									   VerticalAlignment="Center"/>
+            <StackPanel Spacing="12">
+                <TextBlock Text="BepInEx" 
+                          FontWeight="Bold" 
+                          FontSize="18" 
+                          Foreground="{DynamicResource MainTextBrush}" 
+                          Margin="0,0,0,4"/>
+                
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                       CornerRadius="12" 
+                       Padding="20" 
+                       BorderBrush="{DynamicResource BorderBrush}" 
+                       BorderThickness="1">
+                    <StackPanel Spacing="16">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="VERSION" 
+                                          FontSize="11" 
+                                          FontWeight="Black" 
+                                          Opacity="0.5" 
+                                          LetterSpacing="1.5"/>
+                                <ComboBox ItemsSource="{Binding BepInExVersions}"
+                                         SelectedItem="{Binding SelectedBepInExVersion}"
+                                         PlaceholderText="Select Version..."
+                                         Width="320"
+                                         Height="44"/>
+                            </StackPanel>
 
-							<Button Grid.Column="2"
-									Command="{Binding ImportModListCommand}"
-									Background="Transparent"
-									BorderThickness="0"
-									HorizontalAlignment="Stretch"
-									VerticalAlignment="Stretch"
-									Height="54"
-									CornerRadius="0">
-								<Button.Styles>
-									<Style Selector="Button:pointerover /template/ ContentPresenter">
-										<Setter Property="Background" Value="#0AFFFFFF"/>
-									</Style>
-								</Button.Styles>
-								<StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-									<PathIcon Data="{StaticResource ImportIcon}" Width="14" Height="14"
-											  Foreground="{DynamicResource SystemAccentBrush}"/>
-									<TextBlock Text="Restore Backup" FontWeight="Medium" FontSize="13"/>
-								</StackPanel>
-							</Button>
-						</Grid>
-					</StackPanel>
-				</Border>
-			</StackPanel>
+                            <Button Grid.Column="1"
+                                   Command="{Binding InstallSelectedVersionCommand}"
+                                   Classes="Filled"
+                                   Content="INSTALL"
+                                   Height="44"
+                                   Padding="32,0"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom"/>
+                        </Grid>
 
-            <StackPanel Spacing="8">
-                <TextBlock Text="Utility Tools" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource MainTextBrush}" Margin="4,0"/>
-                <Border Background="{DynamicResource SettingsGroupBg}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                    <UniformGrid Columns="2" Rows="2">
-                        <Button Margin="4" Command="{Binding CreateShortcutCommand}" Classes="Tonal" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource PlusIcon}" Width="13" Height="13"/><TextBlock Text="Create Desktop Shortcut" VerticalAlignment="Center"/></StackPanel>
+                        <Button Command="{Binding UninstallBepInExCommand}" 
+                               Classes="Tonal" 
+                               HorizontalAlignment="Left"
+                               Height="38"
+                               Padding="20,0"
+                               Foreground="#FF6B6B">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{StaticResource DeleteIcon}" Width="13" Height="13"/>
+                                <TextBlock Text="Uninstall BepInEx" FontWeight="Medium"/>
+                            </StackPanel>
                         </Button>
-                        <Button Margin="4" Command="{Binding OpenModFolderCommand}" Classes="Tonal" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource FolderIcon}" Width="13" Height="13"/><TextBlock Text="Open Mods Folder" VerticalAlignment="Center"/></StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="12">
+                <TextBlock Text="Utilities" 
+                          FontWeight="Bold" 
+                          FontSize="18" 
+                          Foreground="{DynamicResource MainTextBrush}" 
+                          Margin="0,0,0,4"/>
+                
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                       CornerRadius="12" 
+                       Padding="16" 
+                       BorderBrush="{DynamicResource BorderBrush}" 
+                       BorderThickness="1">
+                    <UniformGrid Columns="2" Rows="2" VerticalAlignment="Center">
+                        <Button Margin="6" 
+                               Command="{Binding CreateShortcutCommand}" 
+                               Classes="Tonal" 
+                               Height="48"
+                               HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{StaticResource PlusIcon}" Width="14" Height="14"/>
+                                <TextBlock Text="Desktop Shortcut" FontWeight="Medium"/>
+                            </StackPanel>
                         </Button>
-                        <Button Margin="4" Command="{Binding UpdateAllModsCommand}" Classes="Tonal" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource RefreshIcon}" Width="13" Height="13"/><TextBlock Text="Sync With Server" VerticalAlignment="Center"/></StackPanel>
+                        
+                        <Button Margin="6" 
+                               Command="{Binding OpenModFolderCommand}" 
+                               Classes="Tonal" 
+                               Height="48"
+                               HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{StaticResource FolderIcon}" Width="14" Height="14"/>
+                                <TextBlock Text="Mods Folder" FontWeight="Medium"/>
+                            </StackPanel>
                         </Button>
-                        <Button Margin="4" Command="{Binding UninstallBepInExCommand}" Classes="Tonal" HorizontalAlignment="Stretch" Foreground="{DynamicResource WarningBrush}">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource DeleteIcon}" Width="13" Height="13"/><TextBlock Text="Uninstall BepInEx" VerticalAlignment="Center"/></StackPanel>
+                        
+                        <Button Margin="6" 
+                               Command="{Binding UpdateAllModsCommand}" 
+                               Classes="Tonal" 
+                               Height="48"
+                               HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{StaticResource RefreshIcon}" Width="14" Height="14"/>
+                                <TextBlock Text="Sync All Mods" FontWeight="Medium"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Margin="6" 
+                               Command="{Binding ClearAppCacheCommand}" 
+                               Classes="Tonal" 
+                               Height="48"
+                               HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{StaticResource CloseIcon}" Width="14" Height="14"/>
+                                <TextBlock Text="Clear Cache" FontWeight="Medium"/>
+                            </StackPanel>
                         </Button>
                     </UniformGrid>
                 </Border>
             </StackPanel>
 
-			<StackPanel Spacing="8">
-				<TextBlock Text="BepInEx Management" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource MainTextBrush}" Margin="4,0"/>
-				<Border Background="{DynamicResource SettingsGroupBg}" CornerRadius="8" Padding="16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-					<Grid ColumnDefinitions="*, Auto" Margin="4">
-						<StackPanel Spacing="6">
-							<TextBlock Text="VERSION"
-									   FontSize="10"
-									   FontWeight="Black"
-									   Opacity="0.5"
-									   LetterSpacing="1"/>
-							<ComboBox ItemsSource="{Binding BepInExVersions}"
-									  SelectedItem="{Binding SelectedBepInExVersion}"
-									  HorizontalAlignment="Stretch"
-									  VerticalAlignment="Center"
-									  PlaceholderText="Select Version..."
-									  Margin="0,0,12,0" />
-						</StackPanel>
-
-						<Button Grid.Column="1"
-								Command="{Binding InstallSelectedBepInExCommand}"
-								Classes="Filled"
-								HorizontalAlignment="Stretch"
-								VerticalAlignment="Center"
-								Content="INSTALL"
-								Height="42"
-								Padding="24,0"/>
-					</Grid>
-				</Border>
-			</StackPanel>
-
-            <StackPanel Spacing="4" HorizontalAlignment="Center" Opacity="0.4" Margin="0,0,0,20">
-                <TextBlock Text="{Binding AppVersion}" FontSize="11" HorizontalAlignment="Center"/>
-                <TextBlock Text="Yellowcake Mod Manager • NaghDiefallah" FontSize="10" HorizontalAlignment="Center"/>
+            <StackPanel Spacing="6" 
+                       HorizontalAlignment="Center" 
+                       Opacity="0.45" 
+                       Margin="0,8,0,0">
+                <TextBlock Text="{Binding AppVersion}" 
+                          FontSize="12" 
+                          HorizontalAlignment="Center"
+                          FontWeight="Medium"/>
+                <TextBlock Text="Yellowcake Mod Manager • NaghDiefallah" 
+                          FontSize="11" 
+                          HorizontalAlignment="Center"
+                          Opacity="0.8"/>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

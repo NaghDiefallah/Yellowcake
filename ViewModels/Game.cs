@@ -2,12 +2,12 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -59,154 +59,131 @@ public partial class MainViewModel
             GamePath = path;
             _db.SaveSetting("GamePath", path);
 
-            Log.Information("Validated and saved game path: {Path}", path);
-            NotificationService.Instance.Success("Game path verified and saved.");
+            Log.Information("Game path selected: {Path}", path);
 
-            await SyncInstalledStates();
             await RefreshUI();
+            NotificationService.Instance.Success("Game detected successfully!");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to update game path: {Path}", path);
-            NotificationService.Instance.Error("Failed to save game path.");
+            Log.Error(ex, "Failed to set game path");
+            NotificationService.Instance.Error("Failed to set game path.");
         }
     }
 
     [RelayCommand]
-    public async Task AutoDetectGamePath()
+    public async Task BrowseForGame()
     {
-        await Task.Run(async () =>
+        await SelectExe();
+    }
+
+    [RelayCommand]
+    public void CreateShortcut()
+    {
+        try
         {
-            try
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Log.Information("Scanning for Nuclear Option installation...");
-
-                var libraryPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                string? steamBase = null;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    steamBase = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null) as string
-                                ?? Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Valve\Steam", "InstallPath", null) as string;
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    steamBase = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share/Steam");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    steamBase = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library/Application Support/Steam");
-                }
-
-                if (!string.IsNullOrWhiteSpace(steamBase) && Directory.Exists(steamBase))
-                {
-                    var rootSteamApps = Path.Combine(steamBase, "steamapps");
-                    libraryPaths.Add(rootSteamApps);
-
-                    string vdfPath = Path.Combine(rootSteamApps, "libraryfolders.vdf");
-                    if (File.Exists(vdfPath))
-                    {
-                        string vdfContent = File.ReadAllText(vdfPath);
-                        var matches = System.Text.RegularExpressions.Regex.Matches(vdfContent, @"""path""\s+""([^""]+)""");
-                        foreach (System.Text.RegularExpressions.Match match in matches)
-                        {
-                            string escapedPath = match.Groups[1].Value.Replace(@"\\", Path.DirectorySeparatorChar.ToString());
-                            libraryPaths.Add(Path.Combine(escapedPath, "steamapps"));
-                        }
-                    }
-                }
-
-                string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "NuclearOption.exe" : "NuclearOption";
-
-                foreach (var lib in libraryPaths)
-                {
-                    if (!Directory.Exists(lib)) continue;
-
-                    string manifestPath = Path.Combine(lib, "appmanifest_2168680.acf");
-                    string installDir = Path.Combine(lib, "common", "Nuclear Option", exeName);
-
-                    if (File.Exists(installDir))
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(async () =>
-                        {
-                            GamePath = installDir;
-                            _db.SaveSetting("GamePath", installDir);
-
-                            Log.Information("Game detected: {Path}", installDir);
-                            NotificationService.Instance.Success("Game auto-detected successfully!");
-
-                            await SyncInstalledStates();
-                            await RefreshUI();
-                        });
-                        return;
-                    }
-                }
-
-                Log.Warning("Nuclear Option was not found in detected libraries.");
-                NotificationService.Instance.Warning("Auto-detection failed. Please select the game manually.");
+                NotificationService.Instance.Warning("Shortcut creation is only supported on Windows.");
+                return;
             }
-            catch (Exception ex)
+
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string shortcutPath = Path.Combine(desktopPath, "Nuclear Option (Modded).lnk");
+
+            if (string.IsNullOrEmpty(GamePath) || GamePath == "Not Set")
             {
-                Log.Error(ex, "Error during cross-platform auto-detection.");
+                NotificationService.Instance.Error("Game path not set.");
+                return;
             }
-        });
+
+            var shell = Type.GetTypeFromProgID("WScript.Shell");
+            if (shell == null) return;
+
+            dynamic wsh = Activator.CreateInstance(shell);
+            dynamic shortcut = wsh.CreateShortcut(shortcutPath);
+
+            shortcut.TargetPath = GamePath;
+            shortcut.WorkingDirectory = Path.GetDirectoryName(GamePath);
+            shortcut.Description = "Launch Nuclear Option with mods";
+            shortcut.Save();
+
+            NotificationService.Instance.Success("Desktop shortcut created.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to create desktop shortcut");
+            NotificationService.Instance.Error("Failed to create shortcut.");
+        }
     }
 
     [RelayCommand]
     public void LaunchGame()
     {
-        if (!IsGameDetected || !File.Exists(GamePath))
+        if (string.IsNullOrEmpty(GamePath) || GamePath == "Not Set" || !File.Exists(GamePath))
         {
-            NotificationService.Instance.Warning("Game executable not found.");
+            NotificationService.Instance.Error("Game not detected. Please set the game path in settings.");
             return;
         }
 
         try
         {
-            Process.Start(new ProcessStartInfo(GamePath)
+            string? dir = Path.GetDirectoryName(GamePath);
+            if (string.IsNullOrEmpty(dir)) return;
+
+            Process.Start(new ProcessStartInfo
             {
-                UseShellExecute = true,
-                WorkingDirectory = Path.GetDirectoryName(GamePath)
+                FileName = GamePath,
+                WorkingDirectory = dir,
+                UseShellExecute = true
             });
 
+            NotificationService.Instance.Info("Game launched!");
+
             if (CloseOnLaunch)
-                Environment.Exit(0);
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var app = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+                    app?.MainWindow?.Close();
+                }, DispatcherPriority.Background);
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to launch game at {Path}", GamePath);
-            NotificationService.Instance.Error("Could not launch game.");
+            Log.Error(ex, "Failed to launch game from path: {GamePath}", GamePath);
+            NotificationService.Instance.Error("Failed to launch game.");
         }
     }
 
-    [RelayCommand]
-    public async Task InstallBepInEx()
-    {
-        if (!IsGameDetected) return;
+    //[RelayCommand]
+    //public async Task InstallBepInEx()
+    //{
+    //    if (!IsGameDetected || string.IsNullOrWhiteSpace(SelectedBepInExVersion)) return;
 
-        try
-        {
-            GameStatus = "Installing BepInEx...";
-            string? gameDir = Path.GetDirectoryName(GamePath);
+    //    try
+    //    {
+    //        GameStatus = "Installing BepInEx...";
 
-            if (string.IsNullOrEmpty(gameDir)) return;
+    //        await _bepInExService.InstallVersionAsync(
+    //            SelectedBepInExVersion, 
+    //            GamePath, 
+    //            p => BepInExDownloadProgress = p);
 
-            await _modService.InstallBepInExAsync(gameDir, new Progress<double>(p => BepInExDownloadProgress = p));
-
-            await RefreshUI();
-            NotificationService.Instance.Success("BepInEx installed successfully.");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "BepInEx installation failed");
-            NotificationService.Instance.Error("Installation failed.");
-        }
-        finally
-        {
-            BepInExDownloadProgress = 0;
-            GameStatus = IsGameDetected ? "Ready" : "Awaiting game path...";
-        }
-    }
+    //        await RefreshUI();
+    //        NotificationService.Instance.Success("BepInEx installed successfully.");
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Log.Error(ex, "BepInEx installation failed");
+    //        NotificationService.Instance.Error("Installation failed.");
+    //    }
+    //    finally
+    //    {
+    //        BepInExDownloadProgress = 0;
+    //        GameStatus = IsGameDetected ? "Ready" : "Awaiting game path...";
+    //    }
+    //}
 
     [RelayCommand]
     public async Task UninstallBepInEx()
@@ -221,61 +198,16 @@ public partial class MainViewModel
         {
             try
             {
-                await _modService.RemoveBepInEx();
+                _bepInExService.Uninstall(GamePath);
+
                 await RefreshUI();
-                NotificationService.Instance.Info("Modding files removed.");
+                NotificationService.Instance.Success("BepInEx uninstalled.");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to remove BepInEx");
-                NotificationService.Instance.Error("Cleanup failed.");
+                Log.Error(ex, "Failed to uninstall BepInEx");
+                NotificationService.Instance.Error("Uninstall failed.");
             }
-        }
-    }
-
-    [RelayCommand]
-    public void OpenModFolder()
-    {
-        if (Directory.Exists(_installService.ModsPath))
-        {
-            Process.Start(new ProcessStartInfo(_installService.ModsPath) { UseShellExecute = true });
-        }
-    }
-
-    [RelayCommand]
-    public void CreateShortcut()
-    {
-        if (string.IsNullOrEmpty(GamePath) || !File.Exists(GamePath))
-        {
-            NotificationService.Instance.Warning("Please select the game path first.");
-            return;
-        }
-
-        try
-        {
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string shortcutLocation = Path.Combine(desktopPath, "Nuclear Option.lnk");
-
-            Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
-            if (shellType == null) throw new Exception("WScript.Shell COM interface not found.");
-
-            dynamic shell = Activator.CreateInstance(shellType)!;
-            var shortcut = shell.CreateShortcut(shortcutLocation);
-
-            shortcut.TargetPath = GamePath;
-            shortcut.WorkingDirectory = Path.GetDirectoryName(GamePath);
-            shortcut.Description = "Launch Nuclear Option via Yellowcake";
-            shortcut.IconLocation = $"{GamePath},0";
-
-            shortcut.Save();
-
-            Log.Information("Shortcut created at: {Path}", shortcutLocation);
-            NotificationService.Instance.Success("Desktop shortcut created.");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Shortcut creation failed.");
-            NotificationService.Instance.Error("Could not create shortcut.");
         }
     }
 }

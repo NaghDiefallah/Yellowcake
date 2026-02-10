@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Yellowcake.Views.Components.EmptyState">
+
+  <Border Background="{DynamicResource CardBackgroundBrush}"
+          CornerRadius="16"
+          Padding="60,80"
+          BorderBrush="{DynamicResource BorderBrush}"
+          BorderThickness="1"
+          MaxWidth="500"
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center">
+    <StackPanel Spacing="24" HorizontalAlignment="Center">
+      <!-- Icon -->
+      <Border Background="{DynamicResource SystemAccentBrushLight}"
+              Width="80" Height="80"
+              CornerRadius="40"
+              HorizontalAlignment="Center">
+        <PathIcon x:Name="Icon"
+                  Width="36" Height="36"
+                  Foreground="{DynamicResource SystemAccentBrush}"/>
+      </Border>
+
+      <!-- Title -->
+      <TextBlock x:Name="Title"
+                 FontSize="24"
+                 FontWeight="Bold"
+                 HorizontalAlignment="Center"
+                 TextAlignment="Center"/>
+
+      <!-- Description -->
+      <TextBlock x:Name="Description"
+                 FontSize="14"
+                 Foreground="{DynamicResource SubTextBrush}"
+                 Opacity="0.8"
+                 HorizontalAlignment="Center"
+                 TextAlignment="Center"
+                 TextWrapping="Wrap"
+                 MaxWidth="400"/>
+
+      <!-- Action Button -->
+      <Button x:Name="ActionButton"
+              Classes="Filled"
+              HorizontalAlignment="Center"
+              Padding="32,12"
+              IsVisible="False"/>
+    </StackPanel>
+  </Border>
+</UserControl>

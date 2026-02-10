@@ -3,70 +3,124 @@
              xmlns:vm="using:Yellowcake.ViewModels"
              xmlns:models="clr-namespace:Yellowcake.Models"
              xmlns:conv="using:Yellowcake.Converters"
+             xmlns:views="using:Yellowcake.Views"
              x:Class="Yellowcake.Views.BrowseView"
-             x:DataType="vm:MainViewModel">
+             x:DataType="vm:MainViewModel"
+             MinWidth="700">
 
-	<Grid RowDefinitions="Auto, Auto, *">
-		<Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="4,8,4,16">
-									<TextBox Grid.Column="0"
-								 Text="{Binding SearchText}"
-								 Watermark="Search mods, authors, or tags..."
-								 Height="44"
-								 VerticalContentAlignment="Center"
-								 Background="{DynamicResource CardBackgroundBrush}"
-								 BorderBrush="{DynamicResource BorderBrush}"
-								 BorderThickness="1"
-								 CornerRadius="8"
-								 FontSize="14">
-				<TextBox.Transitions>
-					<Transitions>
-						<BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
-						<BrushTransition Property="Background" Duration="0:0:0.2"/>
-						<ThicknessTransition Property="BorderThickness" Duration="0:0:0.1"/>
-					</Transitions>
-				</TextBox.Transitions>
+	<Grid RowDefinitions="Auto, Auto, Auto, *" Margin="12">
 
-				<TextBox.Styles>
-					<Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
-						<Setter Property="BorderBrush" Value="{DynamicResource SystemAccentBrush}"/>
-						<Setter Property="Background" Value="#1A1A1A"/>
-						<Setter Property="BorderThickness" Value="1.5"/>
-					</Style>
-					<Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
-						<Setter Property="BorderBrush" Value="{DynamicResource SystemAccentBrushLight}"/>
-					</Style>
-				</TextBox.Styles>
-
+		<Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+			<TextBox Grid.Column="0"
+					 x:Name="SearchBox"
+					 Text="{Binding SearchText, Mode=TwoWay}"
+					 Watermark="Search mods, authors, or tags... (Ctrl+F)"
+					 Height="44"
+					 VerticalContentAlignment="Center"
+					 Background="{DynamicResource CardBackgroundBrush}"
+					 BorderBrush="{DynamicResource BorderBrush}"
+					 BorderThickness="1"
+					 CornerRadius="8"
+					 FontSize="14">
 				<TextBox.InnerLeftContent>
-					<PathIcon Data="{StaticResource SearchIcon}"
-							  Width="16" Height="16"
-							  Margin="14,0,8,0"
-							  Foreground="{DynamicResource SystemAccentBrush}"
-							  Opacity="0.6"/>
+					<PathIcon Data="{StaticResource SearchIcon}" Width="16" Height="16" Margin="12,0,8,0" Foreground="{DynamicResource SystemAccentBrush}" Opacity="0.7"/>
 				</TextBox.InnerLeftContent>
-
 				<TextBox.InnerRightContent>
-					<Button Command="{Binding $parent[TextBox].Clear}"
-							IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-							Classes="Icon"
-							Margin="0,0,8,0"
-							Padding="4"
-							ToolTip.Tip="Clear Search">
-						<PathIcon Data="{StaticResource CloseIcon}" Width="10" Height="10" Opacity="0.5"/>
+					<Button Classes="Icon" IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Command="{Binding ClearSearchCommand}" Margin="0,0,8,0" ToolTip.Tip="Clear search (Esc)">
+						<PathIcon Data="{StaticResource CloseIcon}" Width="12" Height="12" Opacity="0.5"/>
 					</Button>
 				</TextBox.InnerRightContent>
 			</TextBox>
 
-			<Button Command="{Binding RefreshModsCommand}" Classes="Icon" ToolTip.Tip="Refresh Mod List" Grid.Column="1">
-				<PathIcon Data="{StaticResource RefreshIcon}">
+			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="12,0,0,0">
+				<Button Command="{Binding RefreshModsCommand}" Classes="Icon" ToolTip.Tip="Refresh mod list (Ctrl+R)" Width="40" Height="40">
+					<PathIcon Data="{StaticResource RefreshIcon}" Width="16" Height="16"/>
+				</Button>
+
+				<DropDownButton Classes="Icon" ToolTip.Tip="Sort mods" Width="40" Height="40">
+					<PathIcon Data="{StaticResource SortIcon}" Width="14" Height="14"/>
+					<DropDownButton.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Name (A-Z)" Command="{Binding SetSortCommand}" CommandParameter="NameAsc"/>
+							<MenuItem Header="Name (Z-A)" Command="{Binding SetSortCommand}" CommandParameter="NameDesc"/>
+							<MenuItem Header="Author" Command="{Binding SetSortCommand}" CommandParameter="Author"/>
+						</MenuFlyout>
+					</DropDownButton.Flyout>
+				</DropDownButton>
+
+				<Button Classes="Icon" Command="{Binding ToggleBatchModeCommand}" ToolTip.Tip="Batch mode (Ctrl+A)" Width="40" Height="40">
+					<PathIcon Data="{StaticResource BoxIcon}" Width="16" Height="16"/>
+				</Button>
+
+				<Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" CornerRadius="6" Padding="8,6">
+					<TextBlock Text="{Binding InstalledMods.Count, StringFormat='Installed: {0}'}" FontSize="12" Foreground="{DynamicResource SubTextBrush}"/>
+				</Border>
+			</StackPanel>
+		</Grid>
+
+		<Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+			<ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Hidden">
+				<StackPanel Orientation="Horizontal" Spacing="8">
+					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.All}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.All}">
+						<TextBlock Text="All"/>
+					</RadioButton>
+					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Plugins}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.Plugins}">
+						<TextBlock Text="Plugins"/>
+					</RadioButton>
+					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Voice}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.Voice}">
+						<TextBlock Text="Voice Packs"/>
+					</RadioButton>
+					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Livery}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.Livery}">
+						<TextBlock Text="Liveries"/>
+					</RadioButton>
+					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Missions}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.Missions}">
+						<TextBlock Text="Missions"/>
+					</RadioButton>
+				</StackPanel>
+			</ScrollViewer>
+			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+				<TextBlock Text="{Binding AvailableMods.Count, StringFormat='Showing {0} mods'}" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+				<Border Background="{DynamicResource SystemAccentBrushLight}" CornerRadius="4" Padding="6,2" IsVisible="{Binding IsFiltering}">
+					<TextBlock Text="Filtering..." FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SystemAccentBrush}"/>
+				</Border>
+			</StackPanel>
+		</Grid>
+
+		<Border Grid.Row="2" Margin="0,0,0,12" Background="{DynamicResource SystemAccentBrushLight}" CornerRadius="8" Padding="12" IsVisible="{Binding IsBatchMode}">
+			<Grid ColumnDefinitions="*, Auto">
+				<StackPanel Orientation="Horizontal" Spacing="12">
+					<TextBlock FontWeight="SemiBold" VerticalAlignment="Center">
+						<Run Text="{Binding SelectedMods.Count}"/>
+						<Run Text=" selected"/>
+					</TextBlock>
+					<Button Classes="Link" Content="Deselect All" Command="{Binding DeselectAllModsCommand}" FontSize="12" Padding="6,4"/>
+				</StackPanel>
+				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+					<Button Classes="Tonal" Content="Install" Command="{Binding BatchInstallCommand}" Height="32" Padding="12,0" FontSize="12"/>
+					<Button Classes="Tonal" Content="Uninstall" Command="{Binding BatchUninstallCommand}" Height="32" Padding="12,0" FontSize="12"/>
+					<Button Classes="Tonal" Content="Enable" Command="{Binding BatchEnableCommand}" Height="32" Padding="12,0" FontSize="12"/>
+					<Button Classes="Tonal" Content="Disable" Command="{Binding BatchDisableCommand}" Height="32" Padding="12,0" FontSize="12"/>
+					<Button Classes="Icon" Command="{Binding ToggleBatchModeCommand}" ToolTip.Tip="Exit batch mode" Width="32" Height="32">
+						<PathIcon Data="{StaticResource CloseIcon}" Width="12" Height="12"/>
+					</Button>
+				</StackPanel>
+			</Grid>
+		</Border>
+
+		<Border Grid.Row="3" IsVisible="{Binding IsLoading}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center">
+			<StackPanel Spacing="16" HorizontalAlignment="Center">
+				<PathIcon Data="{StaticResource RefreshIcon}" Width="48" Height="48" Foreground="{DynamicResource SystemAccentBrush}">
+					<PathIcon.RenderTransform>
+						<RotateTransform Angle="0"/>
+					</PathIcon.RenderTransform>
 					<PathIcon.Styles>
-						<Style Selector="PathIcon.loading">
+						<Style Selector="PathIcon">
 							<Style.Animations>
 								<Animation Duration="0:0:1" IterationCount="Infinite">
-									<KeyFrame KeyTime="0:0:0">
+									<KeyFrame Cue="0%">
 										<Setter Property="RotateTransform.Angle" Value="0"/>
 									</KeyFrame>
-									<KeyFrame KeyTime="0:0:1">
+									<KeyFrame Cue="100%">
 										<Setter Property="RotateTransform.Angle" Value="360"/>
 									</KeyFrame>
 								</Animation>
@@ -74,238 +128,192 @@
 						</Style>
 					</PathIcon.Styles>
 				</PathIcon>
-			</Button>
-		</Grid>
-
-		<Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="0,0,0,16">
-			<ScrollViewer Grid.Row="1"
-				  HorizontalScrollBarVisibility="Hidden"
-				  VerticalScrollBarVisibility="Disabled"
-				  Margin="0,0,0,16">
-				<StackPanel Orientation="Horizontal" Spacing="8">
-					<RadioButton Classes="FilterChip"
-								 IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.All}}"
-								 Command="{Binding SetFilterCommand}"
-								 CommandParameter="{x:Static models:ModFilter.All}">
-						<Grid ColumnDefinitions="28,*">
-							<PathIcon Data="{StaticResource CheckIcon}" Width="14" Height="14" HorizontalAlignment="Left"
-									  IsVisible="{Binding $parent[RadioButton].IsChecked}" />
-							<TextBlock Grid.Column="1" Text="All" VerticalAlignment="Center"/>
-						</Grid>
-					</RadioButton>
-
-					<RadioButton Classes="FilterChip"
-								 IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Plugins}}"
-								 Command="{Binding SetFilterCommand}"
-								 CommandParameter="{x:Static models:ModFilter.Plugins}">
-						<Grid ColumnDefinitions="28,*">
-							<PathIcon Data="{StaticResource CheckIcon}" Width="14" Height="14" HorizontalAlignment="Left"
-									  IsVisible="{Binding $parent[RadioButton].IsChecked}" />
-							<TextBlock Grid.Column="1" Text="Plugins" VerticalAlignment="Center"/>
-						</Grid>
-					</RadioButton>
-
-					<RadioButton Classes="FilterChip"
-								 IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Voice}}"
-								 Command="{Binding SetFilterCommand}"
-								 CommandParameter="{x:Static models:ModFilter.Voice}">
-						<Grid ColumnDefinitions="28,*">
-							<PathIcon Data="{StaticResource CheckIcon}" Width="14" Height="14" HorizontalAlignment="Left"
-									  IsVisible="{Binding $parent[RadioButton].IsChecked}" />
-							<TextBlock Grid.Column="1" Text="Voice Packs" VerticalAlignment="Center"/>
-						</Grid>
-					</RadioButton>
-
-					<RadioButton Classes="FilterChip"
-								 IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Livery}}"
-								 Command="{Binding SetFilterCommand}"
-								 CommandParameter="{x:Static models:ModFilter.Livery}">
-						<Grid ColumnDefinitions="28,*">
-							<PathIcon Data="{StaticResource CheckIcon}" Width="14" Height="14" HorizontalAlignment="Left"
-									  IsVisible="{Binding $parent[RadioButton].IsChecked}" />
-							<TextBlock Grid.Column="1" Text="Liveries" VerticalAlignment="Center"/>
-						</Grid>
-					</RadioButton>
-
-					<RadioButton Classes="FilterChip"
-								 IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Missions}}"
-								 Command="{Binding SetFilterCommand}"
-								 CommandParameter="{x:Static models:ModFilter.Missions}">
-						<Grid ColumnDefinitions="28,*">
-							<PathIcon Data="{StaticResource CheckIcon}" Width="14" Height="14" HorizontalAlignment="Left"
-									  IsVisible="{Binding $parent[RadioButton].IsChecked}" />
-							<TextBlock Grid.Column="1" Text="Missions" VerticalAlignment="Center"/>
-						</Grid>
-					</RadioButton>
-				</StackPanel>
-			</ScrollViewer>
-
-			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0">
-				<Separator Background="{DynamicResource BorderBrush}" Width="1" Height="20" VerticalAlignment="Center"/>
-
-				<DropDownButton Classes="SortChip"
-								Background="{DynamicResource CardBackgroundBrush}"
-								BorderBrush="{DynamicResource BorderBrush}"
-								BorderThickness="1"
-								CornerRadius="8"
-								Height="32">
-					<StackPanel Orientation="Horizontal" Spacing="8">
-						<PathIcon Data="{StaticResource SortIcon}" Width="12" Height="12" Foreground="{DynamicResource SystemAccentBrush}"/>
-						<TextBlock Text="Sort" FontSize="12" VerticalAlignment="Center"/>
-					</StackPanel>
-
-					<DropDownButton.Flyout>
-						<MenuFlyout Placement="BottomEdgeAlignedRight">
-							<MenuItem Header="Name (A-Z)" Command="{Binding SetSortCommand}" CommandParameter="NameAsc"/>
-							<MenuItem Header="Name (Z-A)" Command="{Binding SetSortCommand}" CommandParameter="NameDesc"/>
-							<MenuItem Header="Latest Update" Command="{Binding SetSortCommand}" CommandParameter="Date"/>
-							<MenuItem Header="Author" Command="{Binding SetSortCommand}" CommandParameter="Author"/>
-						</MenuFlyout>
-					</DropDownButton.Flyout>
-				</DropDownButton>
+				<TextBlock Text="Loading mods..." FontSize="14" Foreground="{DynamicResource SubTextBrush}"/>
 			</StackPanel>
+		</Border>
+
+		<Grid Grid.Row="3" ColumnDefinitions="*, Auto" IsVisible="{Binding !IsLoading}">
+
+			<Panel Grid.Column="0">
+				<ListBox ItemsSource="{Binding AvailableMods}"
+						 Background="Transparent"
+						 BorderThickness="0"
+						 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+						 ScrollViewer.VerticalScrollBarVisibility="Auto"
+						Margin="5, 0, 5, 5">
+
+					<ListBox.ItemsPanel>
+						<ItemsPanelTemplate>
+							<VirtualizingStackPanel Orientation="Vertical"/>
+						</ItemsPanelTemplate>
+					</ListBox.ItemsPanel>
+
+					<ListBox.Styles>
+						<Style Selector="ListBoxItem">
+							<Setter Property="Background" Value="Transparent"/>
+							<Setter Property="Padding" Value="0,0,0,0"/>
+							<Setter Property="Template">
+								<ControlTemplate>
+									<ContentPresenter Content="{TemplateBinding Content}"
+													  ContentTemplate="{TemplateBinding ContentTemplate}"/>
+								</ControlTemplate>
+							</Setter>
+						</Style>
+					</ListBox.Styles>
+
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="models:Mod">
+							<Border Background="{DynamicResource CardBackgroundBrush}" Padding="16" CornerRadius="10" Margin="0,6" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+								<Border.ContextFlyout>
+									<MenuFlyout>
+										<MenuItem Header="View Details" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowModDetailsCommand}" CommandParameter="{Binding}">
+											<MenuItem.Icon>
+												<PathIcon Data="{StaticResource InfoIcon}" Width="14" Height="14"/>
+											</MenuItem.Icon>
+										</MenuItem>
+										<MenuItem Header="Open Project Page" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).OpenUrlCommand}" CommandParameter="{Binding InfoUrl}" IsVisible="{Binding InfoUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+											<MenuItem.Icon>
+												<PathIcon Data="{StaticResource BoxIcon}" Width="14" Height="14"/>
+											</MenuItem.Icon>
+										</MenuItem>
+										<Separator/>
+										<MenuItem Header="Copy Mod ID" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CopyModIdCommand}" CommandParameter="{Binding}"/>
+										<MenuItem Header="Copy Info URL" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CopyTextCommand}" CommandParameter="{Binding InfoUrl}" IsVisible="{Binding InfoUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+										<Separator/>
+										<MenuItem Header="Uninstall" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).DeleteModCommand}" CommandParameter="{Binding}" IsVisible="{Binding IsInstalled}">
+											<MenuItem.Icon>
+												<PathIcon Data="{StaticResource DeleteIcon}" Width="14" Height="14"/>
+											</MenuItem.Icon>
+										</MenuItem>
+									</MenuFlyout>
+								</Border.ContextFlyout>
+
+								<Border.Styles>
+									<Style Selector="Border:pointerover">
+										<Setter Property="BorderBrush" Value="{DynamicResource SystemAccentBrush}"/>
+										<Setter Property="Background" Value="#1AFFFFFF"/>
+									</Style>
+									<Style Selector="Border.Disabled">
+										<Setter Property="Opacity" Value="0.6"/>
+									</Style>
+								</Border.Styles>
+
+								<Grid ColumnDefinitions="Auto, 56, *, 240">
+
+									<CheckBox Grid.Column="0" IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsBatchMode}" IsChecked="{Binding IsSelectedInBatch}" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ToggleModSelectionCommand}" CommandParameter="{Binding}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+
+									<Border Grid.Column="1" Width="48" Height="48" CornerRadius="8" Background="{DynamicResource SystemAccentBrushLight}" Margin="0,0,12,0">
+										<Panel>
+											<Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill" IsVisible="{Binding HasThumbnail}"/>
+											<PathIcon Data="{StaticResource BoxIcon}" Width="24" Height="24" Foreground="{DynamicResource SystemAccentBrush}" IsVisible="{Binding HasThumbnail, Converter={StaticResource InverseBoolConverter}}"/>
+										</Panel>
+									</Border>
+
+									<StackPanel Grid.Column="2" Spacing="8">
+										<StackPanel Orientation="Horizontal" Spacing="12">
+											<TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource MainTextBrush}"/>
+											<Border Background="{DynamicResource SystemAccentBrushLight}" BorderBrush="{DynamicResource SystemAccentBrush}" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+												<TextBlock Text="{Binding Category}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SystemAccentBrush}"/>
+											</Border>
+											<TextBlock Text="{Binding Version, StringFormat='v{0}'}" Foreground="{DynamicResource SubTextBrush}" FontSize="12" VerticalAlignment="Center" Opacity="0.75"/>
+											<Border Background="#FF4CAF50" CornerRadius="4" Padding="4,2" VerticalAlignment="Center" IsVisible="{Binding HasUpdate}">
+												<TextBlock Text="UPDATE" FontSize="9" FontWeight="Bold" Foreground="White"/>
+											</Border>
+										</StackPanel>
+
+										<TextBlock Text="{Binding Description}" Foreground="{DynamicResource SubTextBrush}" FontSize="13" MaxLines="3" TextWrapping="Wrap" Opacity="0.9"/>
+
+										<StackPanel Orientation="Horizontal" Spacing="12">
+											<StackPanel Orientation="Horizontal" Spacing="6">
+												<PathIcon Data="{StaticResource UserIcon}" Width="12" Height="12" Foreground="{DynamicResource SystemAccentBrush}" VerticalAlignment="Center"/>
+												<ItemsControl ItemsSource="{Binding Authors}">
+													<ItemsControl.ItemsPanel>
+														<ItemsPanelTemplate>
+															<StackPanel Orientation="Horizontal" Spacing="4"/>
+														</ItemsPanelTemplate>
+													</ItemsControl.ItemsPanel>
+													<ItemsControl.ItemTemplate>
+														<DataTemplate>
+															<TextBlock FontSize="11" Foreground="{DynamicResource SubTextBrush}">
+																<Run Text="{Binding}"/><Run Text=", " x:Name="Separator"/>
+															</TextBlock>
+														</DataTemplate>
+													</ItemsControl.ItemTemplate>
+												</ItemsControl>
+											</StackPanel>
+
+											<ItemsControl ItemsSource="{Binding Tags}">
+												<ItemsControl.ItemsPanel>
+													<ItemsPanelTemplate>
+														<WrapPanel/>
+													</ItemsPanelTemplate>
+												</ItemsControl.ItemsPanel>
+												<ItemsControl.ItemTemplate>
+													<DataTemplate>
+														<Button Classes="Link" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SearchByTagCommand}" CommandParameter="{Binding}" Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="4,0,0,0">
+															<Button.Styles>
+																<Style Selector="Button:pointerover">
+																	<Setter Property="Background" Value="{DynamicResource SystemAccentBrushLight}"/>
+																	<Setter Property="BorderBrush" Value="{DynamicResource SystemAccentBrush}"/>
+																</Style>
+															</Button.Styles>
+															<TextBlock Text="{Binding}" FontSize="11" Foreground="{DynamicResource SubTextBrush}"/>
+														</Button>
+													</DataTemplate>
+												</ItemsControl.ItemTemplate>
+											</ItemsControl>
+										</StackPanel>
+									</StackPanel>
+
+									<StackPanel Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center" Width="240" Spacing="8">
+										<StackPanel Spacing="8">
+											<StackPanel Orientation="Horizontal" Spacing="8">
+												<Button Classes="Icon" ToolTip.Tip="View details (Enter)" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowModDetailsCommand}" CommandParameter="{Binding}" Width="40" Height="40">
+													<PathIcon Data="{StaticResource InfoIcon}" Width="20" Height="20" Foreground="{DynamicResource SystemAccentBrush}"/>
+												</Button>
+												<Button Classes="Filled" HorizontalAlignment="Stretch" Width="180" Height="40" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).DownloadModCommand}" CommandParameter="{Binding}" IsEnabled="{Binding !IsDownloading}" IsVisible="{Binding IsInstalled, Converter={StaticResource InverseBoolConverter}}">
+													<StackPanel Orientation="Horizontal" Spacing="8">
+														<PathIcon Data="{StaticResource ArrowBottomIcon}" Width="14" Height="14"/>
+														<TextBlock FontWeight="Bold" IsVisible="{Binding HasUpdate}">
+															<Run Text="UPDATE"/>
+															<Run Text="{Binding FileSizeFormatted, StringFormat=' ({0})'}" FontSize="11"/>
+														</TextBlock>
+														<TextBlock FontWeight="Bold" IsVisible="{Binding HasUpdate, Converter={StaticResource InverseBoolConverter}}">
+															<Run Text="INSTALL"/>
+															<Run Text="{Binding FileSizeFormatted, StringFormat=' ({0})'}" FontSize="11"/>
+														</TextBlock>
+													</StackPanel>
+												</Button>
+												<Button Classes="Tonal" HorizontalAlignment="Stretch" Width="180" Height="40" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).DeleteModCommand}" CommandParameter="{Binding}" IsEnabled="{Binding !IsDownloading}" IsVisible="{Binding IsInstalled}">
+													<StackPanel Orientation="Horizontal" Spacing="8">
+														<PathIcon Data="{StaticResource DeleteIcon}" Width="14" Height="14"/>
+														<TextBlock Text="UNINSTALL" FontWeight="Bold"/>
+													</StackPanel>
+												</Button>
+											</StackPanel>
+										</StackPanel>
+
+										<StackPanel IsVisible="{Binding IsDownloading}" Spacing="6">
+											<Grid ColumnDefinitions="*, Auto">
+												<TextBlock Text="Downloading..." FontSize="12" Foreground="{DynamicResource SubTextBrush}"/>
+												<TextBlock Grid.Column="1" Text="{Binding DownloadProgressText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SystemAccentBrush}"/>
+											</Grid>
+											<ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="100" Height="8" CornerRadius="4" Background="#22303030" Foreground="{DynamicResource SystemAccentBrush}"/>
+											<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+												<Button Classes="Link" Content="Cancel" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CancelDownloadCommand}" CommandParameter="{Binding}" FontSize="12"/>
+											</StackPanel>
+										</StackPanel>
+									</StackPanel>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+
+
+			</Panel>
+
+			<views:ModDetailsDrawer Grid.Column="1" IsVisible="{Binding IsDetailsOpen}"/>
 		</Grid>
-
-		<ListBox Grid.Row="2"
-         ItemsSource="{Binding AvailableMods}"
-         Background="Transparent"
-         BorderThickness="0"
-         ScrollViewer.VerticalScrollBarVisibility="Auto">
-			<ListBox.Styles>
-				<Style Selector="ListBoxItem">
-					<Setter Property="Padding" Value="12, 5"/>
-					<Setter Property="Background" Value="Transparent"/>
-					<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-				</Style>
-				<Style Selector="ListBoxItem:pointerover /template/ ContentPresenter, 
-                       ListBoxItem:selected /template/ ContentPresenter">
-					<Setter Property="Background" Value="Transparent"/>
-				</Style>
-			</ListBox.Styles>
-
-			<ListBox.ItemTemplate>
-				<DataTemplate x:DataType="models:Mod">
-					<Border Background="{DynamicResource CardBackgroundBrush}"
-							Padding="20"
-							CornerRadius="12"
-							BorderBrush="{DynamicResource BorderBrush}"
-							BorderThickness="1"
-							ClipToBounds="True">
-						<Border.Transitions>
-							<Transitions>
-								<BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
-								<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
-							</Transitions>
-						</Border.Transitions>
-
-						<Border.Styles>
-							<Style Selector="Border:pointerover">
-								<Setter Property="BorderBrush" Value="{DynamicResource SystemAccentBrush}"/>
-								<Setter Property="RenderTransform" Value="scale(1.005)"/>
-							</Style>
-						</Border.Styles>
-
-						<Grid ColumnDefinitions="*, 24, 180">
-							<StackPanel Grid.Column="0" Spacing="10">
-								<StackPanel Orientation="Horizontal" Spacing="12">
-									<TextBlock Text="{Binding Name}"
-											 FontWeight="SemiBold"
-											 FontSize="18"
-											 Foreground="{DynamicResource MainTextBrush}"/>
-
-									<Border Background="{DynamicResource SystemAccentBrushLight}"
-											BorderBrush="{DynamicResource SystemAccentBrush}"
-											BorderThickness="1"
-											CornerRadius="6"
-											Padding="8,2"
-											VerticalAlignment="Center">
-										<TextBlock Text="{Binding Category}"
-												 FontSize="10"
-												 FontWeight="Bold"
-												 Foreground="{DynamicResource SystemAccentBrush}"/>
-									</Border>
-
-									<TextBlock Text="{Binding Version, StringFormat='v{0}'}"
-											 Foreground="{DynamicResource SubTextBrush}"
-											 FontSize="12"
-											 VerticalAlignment="Center"
-											 Opacity="0.6"/>
-								</StackPanel>
-
-								<TextBlock Text="{Binding Description}"
-										 Foreground="{DynamicResource SubTextBrush}"
-										 FontSize="14"
-										 TextWrapping="Wrap"
-										 MaxLines="2"
-										 LineHeight="20"/>
-
-								<StackPanel Orientation="Horizontal" Spacing="16">
-									<StackPanel Orientation="Horizontal" Spacing="6">
-										<PathIcon Data="{StaticResource UserIcon}" Width="12" Height="12"
-												  Foreground="{DynamicResource SystemAccentBrush}" Opacity="0.8"/>
-										<TextBlock Text="{Binding Author}" Foreground="{DynamicResource SubTextBrush}" FontSize="12"/>
-									</StackPanel>
-
-
-
-									<Border IsVisible="{Binding IsInstalled}"
-											Background="#2200FF00"
-											Padding="6,1"
-											CornerRadius="4">
-										<TextBlock Text="INSTALLED" FontSize="9" FontWeight="Bold" Foreground="#FF00FF00"/>
-									</Border>
-								</StackPanel>
-							</StackPanel>
-
-							<Panel Grid.Column="2" VerticalAlignment="Center">
-								<Button Classes="Filled"
-										Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).DownloadModCommand}"
-										CommandParameter="{Binding}"
-										IsVisible="{Binding !IsInstalled}"
-										IsEnabled="{Binding !IsDownloading}"
-										HorizontalAlignment="Stretch" Height="40">
-									<StackPanel Orientation="Horizontal" Spacing="8">
-										<PathIcon Data="{StaticResource ArrowBottomIcon}" Width="14" Height="14"/>
-										<TextBlock Text="INSTALL" FontWeight="Bold" FontSize="12"/>
-									</StackPanel>
-								</Button>
-
-								<StackPanel IsVisible="{Binding IsDownloading}" Spacing="6">
-									<Grid ColumnDefinitions="*, Auto">
-										<TextBlock Text="Downloading..." FontSize="11" Foreground="{DynamicResource SubTextBrush}"/>
-										<TextBlock Grid.Column="1" Text="{Binding DownloadProgress, StringFormat='{}{0}%'}"
-												 FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SystemAccentBrush}"/>
-									</Grid>
-									<ProgressBar Value="{Binding DownloadProgress}"
-											   Minimum="0" Maximum="100"
-											   Height="6"
-											   Background="#33FFFFFF"
-											   Foreground="{DynamicResource SystemAccentBrush}"
-											   CornerRadius="3"/>
-									<Button Classes="Link"
-											Content="Cancel"
-											FontSize="10"
-											HorizontalAlignment="Center"
-											Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CancelDownloadCommand}"
-											CommandParameter="{Binding}"/>
-								</StackPanel>
-
-								<Button Classes="Tonal"
-										Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).DeleteModCommand}"
-										CommandParameter="{Binding}"
-										IsVisible="{Binding IsInstalled}"
-										IsEnabled="{Binding !IsDownloading}"
-										HorizontalAlignment="Stretch" Height="40">
-									<StackPanel Orientation="Horizontal" Spacing="8">
-										<PathIcon Data="{StaticResource DeleteIcon}" Width="14" Height="14"/>
-										<TextBlock Text="UNINSTALL" FontWeight="Bold" FontSize="12"/>
-									</StackPanel>
-								</Button>
-							</Panel>
-						</Grid>
-					</Border>
-				</DataTemplate>
-			</ListBox.ItemTemplate>
-		</ListBox>
 	</Grid>
 </UserControl>

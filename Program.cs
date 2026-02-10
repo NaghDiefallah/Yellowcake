@@ -1,41 +1,39 @@
 ﻿using Avalonia;
-using Avalonia.Media;
 using Serilog;
+using Serilog.Events;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using Yellowcake.Services;
 
 namespace Yellowcake;
 
-internal class Program
+class Program
 {
     [STAThread]
     public static void Main(string[] args)
     {
-        string logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
-        if (!Directory.Exists(logDirectory)) Directory.CreateDirectory(logDirectory);
-
-        string logPath = Path.Combine(logDirectory, "yellowcake-.log");
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .Enrich.FromLogContext()
-            .WriteTo.Debug()
-            .WriteTo.File(logPath,
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 7,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
-
+        File.WriteAllText("startup.log", $"App started at {DateTime.Now}\n");
         try
         {
-            Log.Information("Yellowcake Mod Manager Initializing...");
-
-            BuildAvaloniaApp()
-                .StartWithClassicDesktopLifetime(args);
+            ConfigureLogging();
+            
+            Log.Information("Starting Avalonia application...");
+            Log.Debug("Platform: {Platform}", GetPlatformName());
+            
+            var app = BuildAvaloniaApp();
+            app.StartWithClassicDesktopLifetime(args);
+            
+            Log.Information("Application shutdown completed");
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Application terminated unexpectedly.");
+            Log.Fatal(ex, "Application terminated unexpectedly");
+            
+            // Cross-platform error handling
+            HandleFatalError(ex);
+            
+            Environment.Exit(1);
         }
         finally
         {
@@ -43,16 +41,106 @@ internal class Program
         }
     }
 
+    private static void ConfigureLogging()
+    {
+        var logPath = Path.Combine(AppContext.BaseDirectory, "logs");
+        Directory.CreateDirectory(logPath);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .MinimumLevel.Override("Avalonia", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.File(
+                Path.Combine(logPath, "yellowcake-.log"),
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                shared: true,
+                flushToDiskInterval: TimeSpan.FromSeconds(1))
+            .WriteTo.Sink(InMemorySink.Instance)
+            .WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+        Log.Information("=== Yellowcake Mod Manager Starting ===");
+        Log.Information("Application Version: {Version}", 
+            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+        Log.Information("OS: {OS}", Environment.OSVersion);
+        Log.Information(".NET Version: {Version}", Environment.Version);
+        Log.Information("Platform: {Platform}", GetPlatformName());
+        Log.Information("Base Directory: {Directory}", AppContext.BaseDirectory);
+    }
+
     public static AppBuilder BuildAvaloniaApp()
     {
-        return AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace()
-            .With(new Win32PlatformOptions
-            {
-                OverlayPopups = true,
-                RenderingMode = new[] { Win32RenderingMode.Wgl, Win32RenderingMode.AngleEgl, Win32RenderingMode.Software }
-            });
+        try
+        {
+            Log.Debug("Configuring Avalonia AppBuilder...");
+            
+            var builder = AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .WithInterFont()
+                .LogToTrace(Avalonia.Logging.LogEventLevel.Warning);
+            
+            Log.Debug("Avalonia AppBuilder configured successfully");
+            
+            return builder;
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Failed to configure Avalonia AppBuilder");
+            throw;
+        }
+    }
+
+    private static void HandleFatalError(Exception ex)
+    {
+        var errorMessage = $"""
+            ================================================================================
+            FATAL ERROR - Yellowcake Mod Manager
+            ================================================================================
+            
+            The application encountered a fatal error and must close.
+            
+            Error: {ex.Message}
+            
+            Stack Trace:
+            {ex.StackTrace}
+            
+            Log Location: {Path.Combine(AppContext.BaseDirectory, "logs")}
+            
+            Please check the log files for more details.
+            ================================================================================
+            """;
+        // Write to console (cross-platform)
+        Console.Error.WriteLine(errorMessage);
+        
+        // Write to a crash report file
+        try
+        {
+            var crashReportPath = Path.Combine(AppContext.BaseDirectory, $"crash-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+            File.WriteAllText(crashReportPath, $"{errorMessage}\n\nFull Exception:\n{ex}");
+            Console.Error.WriteLine($"\nCrash report saved to: {crashReportPath}");
+        }
+        catch
+        {
+            // Ignore errors writing crash report
+        }
+    }
+
+    private static string GetPlatformName()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return $"Windows {Environment.OSVersion.Version}";
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return $"Linux {Environment.OSVersion.Version}";
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return $"macOS {Environment.OSVersion.Version}";
+        
+        return $"Unknown ({RuntimeInformation.OSDescription})";
     }
 }

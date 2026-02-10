@@ -1,0 +1,126 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Yellowcake.ViewModels"
+        x:Class="Yellowcake.Views.ScreenshotViewerWindow"
+        x:DataType="vm:ScreenshotViewerViewModel"
+        Title="{Binding Title}"
+        Width="1000" Height="700"
+        Icon="avares://Yellowcake/Resources/icon.ico"
+        Background="#DD000000"
+        WindowStartupLocation="CenterOwner"
+        TransparencyLevelHint="AcrylicBlur"
+        KeyDown="Window_KeyDown">
+
+  <Grid RowDefinitions="*,Auto">
+    <!-- Main Image -->
+    <Border Grid.Row="0" Margin="20">
+      <Grid>
+        <!-- Image Display -->
+        <Viewbox Stretch="Uniform">
+          <Image Source="{Binding CurrentScreenshot}"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"/>
+        </Viewbox>
+
+        <!-- Navigation Buttons -->
+        <Button HorizontalAlignment="Left" 
+                VerticalAlignment="Center"
+                Width="50" Height="50"
+                Command="{Binding PreviousCommand}"
+                IsVisible="{Binding CanGoPrevious}"
+                Background="#80000000"
+                CornerRadius="25"
+                Margin="20,0">
+          <PathIcon Data="M15,18 L9,12 L15,6" Width="16" Height="16" Foreground="White"/>
+        </Button>
+
+        <Button HorizontalAlignment="Right" 
+                VerticalAlignment="Center"
+                Width="50" Height="50"
+                Command="{Binding NextCommand}"
+                IsVisible="{Binding CanGoNext}"
+                Background="#80000000"
+                CornerRadius="25"
+                Margin="20,0">
+          <PathIcon Data="M9,18 L15,12 L9,6" Width="16" Height="16" Foreground="White"/>
+        </Button>
+
+        <!-- Close Button -->
+        <Button HorizontalAlignment="Right" 
+                VerticalAlignment="Top"
+                Width="40" Height="40"
+                Margin="20"
+                Click="CloseButton_Click"
+                Background="#80000000"
+                CornerRadius="20">
+          <PathIcon Data="{StaticResource CloseIcon}" Width="16" Height="16" Foreground="White"/>
+        </Button>
+
+        <!-- Loading Indicator -->
+        <Border Background="#CC000000"
+                CornerRadius="8"
+                Padding="30,20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsVisible="{Binding IsLoading}">
+          <StackPanel Spacing="15">
+            <ProgressBar IsIndeterminate="True" Width="200" Height="4"/>
+            <TextBlock Text="Loading screenshots..." 
+                       Foreground="White" 
+                       HorizontalAlignment="Center"
+                       FontSize="14"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Counter -->
+        <Border Background="#80000000"
+                CornerRadius="6"
+                Padding="12,6"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,20"
+                IsVisible="{Binding !IsLoading}">
+          <TextBlock Foreground="White" FontSize="13" FontWeight="Medium">
+            <Run Text="{Binding CurrentIndex, Converter={StaticResource AddOneConverter}}"/>
+            <Run Text="/"/>
+            <Run Text="{Binding Screenshots.Count}"/>
+          </TextBlock>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- Thumbnail Strip -->
+    <Border Grid.Row="1" 
+            Background="#40000000"
+            BorderThickness="0,1,0,0"
+            BorderBrush="#40FFFFFF"
+            Padding="10"
+            IsVisible="{Binding !IsLoading}">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" 
+                    VerticalScrollBarVisibility="Disabled">
+        <ItemsControl ItemsSource="{Binding Screenshots}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Width="120" Height="80"
+                      CornerRadius="4"
+                      ClipToBounds="True"
+                      BorderThickness="2"
+                      BorderBrush="{DynamicResource SystemAccentBrush}"
+                      Cursor="Hand"
+                      PointerPressed="Thumbnail_PointerPressed">
+                <Image Source="{Binding}" 
+                       Stretch="UniformToFill"/>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</Window>

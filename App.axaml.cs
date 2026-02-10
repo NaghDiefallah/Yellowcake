@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Yellowcake.Services;
 using Yellowcake.ViewModels;
+using Yellowcake.Views;
 using System;
 using System.IO;
 using System.Linq;
@@ -30,9 +31,18 @@ public partial class App : Application
 
             var viewModel = new MainViewModel();
 
-            desktop.MainWindow = new MainWindow
+            var mainWindow = new MainWindow
             {
                 DataContext = viewModel
+            };
+
+            desktop.MainWindow = mainWindow;
+
+            // CRITICAL: Initialize NotificationService AFTER window is created
+            mainWindow.Opened += (s, e) =>
+            {
+                NotificationService.Instance.Initialize(mainWindow);
+                Serilog.Log.Information("NotificationService initialized with MainWindow");
             };
 
             HandleCommandLineArguments(desktop.Args, viewModel);

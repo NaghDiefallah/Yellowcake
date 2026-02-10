@@ -44,7 +44,7 @@ public class ThemeService
             Log.Error(ex, "Failed to scan themes");
         }
 
-        return themes;
+        return themes.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public void ApplyTheme(string? themeName = null)

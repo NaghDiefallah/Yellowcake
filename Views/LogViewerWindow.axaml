@@ -1,0 +1,178 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Yellowcake.ViewModels"
+             x:Class="Yellowcake.Views.LogViewerWindow"
+             x:DataType="vm:LogViewerViewModel">
+
+	<UserControl.Styles>
+		<Style Selector="Button">
+			<Setter Property="Padding" Value="12,6"/>
+			<Setter Property="CornerRadius" Value="4"/>
+		</Style>
+		
+		<Style Selector="Button:pointerover">
+			<Setter Property="Background" Value="{DynamicResource SystemAccentBrush}"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+		
+		<Style Selector="TextBlock.Monospace">
+			<Setter Property="FontFamily" Value="Cascadia Code, Consolas, Menlo, Courier New, Monospace"/>
+			<Setter Property="FontSize" Value="12"/>
+		</Style>
+		
+		<Style Selector="ListBoxItem">
+			<Setter Property="Focusable" Value="False"/>
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Padding" Value="0"/>
+		</Style>
+		
+		<Style Selector="ListBoxItem:pointerover">
+			<Setter Property="Background" Value="#10FFFFFF"/>
+		</Style>
+	</UserControl.Styles>
+
+	<Grid RowDefinitions="Auto,*,Auto">
+		<!-- Toolbar -->
+		<Border Grid.Row="0"
+				Background="{DynamicResource CardBackgroundBrush}"
+				Padding="16,12"
+				BorderThickness="0,0,0,1"
+				BorderBrush="{DynamicResource BorderBrush}">
+			<StackPanel Orientation="Horizontal" Spacing="12">
+				<TextBox Width="280"
+						 Text="{Binding FilterText}"
+						 Watermark="Search logs..."
+						 VerticalContentAlignment="Center"/>
+
+				<ComboBox Width="140"
+						  ItemsSource="{Binding LogLevels}"
+						  SelectedItem="{Binding SelectedLevel}"
+						  VerticalAlignment="Center"/>
+
+				<Rectangle Width="1" Height="24" Fill="{DynamicResource BorderBrush}" Margin="4,0"/>
+
+				<Button Content="Refresh" Command="{Binding RefreshCommand}">
+					<Button.Resources>
+						<SolidColorBrush x:Key="ButtonBackground" Color="#2563EB"/>
+					</Button.Resources>
+				</Button>
+				
+				<Button Content="Clear" Command="{Binding ClearCommand}">
+					<Button.Resources>
+						<SolidColorBrush x:Key="ButtonBackground" Color="#DC2626"/>
+					</Button.Resources>
+				</Button>
+				
+				<Button Content="Export" Command="{Binding ExportCommand}">
+					<Button.Resources>
+						<SolidColorBrush x:Key="ButtonBackground" Color="#059669"/>
+					</Button.Resources>
+				</Button>
+			</StackPanel>
+		</Border>
+
+		<!-- Log List -->
+		<ScrollViewer Grid.Row="1"
+					  Background="{DynamicResource DeepBackgroundBrush}"
+					  HorizontalScrollBarVisibility="Disabled"
+					  VerticalScrollBarVisibility="Auto">
+			<ItemsControl ItemsSource="{Binding FilteredLogs}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<VirtualizingStackPanel/>
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<Border Padding="12,6"
+								BorderThickness="0,0,0,1"
+								BorderBrush="#15FFFFFF"
+								Background="Transparent">
+							<Grid ColumnDefinitions="100,90,*">
+								<!-- Timestamp -->
+								<TextBlock Grid.Column="0"
+										   Classes="Monospace"
+										   Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss.fff}'}"
+										   Foreground="#A0A0A0"
+										   VerticalAlignment="Top"
+										   Margin="0,2,0,0"/>
+
+								<!-- Log Level Badge -->
+								<Border Grid.Column="1"
+										Background="{Binding LevelBrush}"
+										CornerRadius="4"
+										Padding="8,3"
+										Margin="0,0,12,0"
+										HorizontalAlignment="Left"
+										VerticalAlignment="Top">
+									<TextBlock Text="{Binding Level}"
+											   FontSize="11"
+											   FontWeight="Bold"
+											   Foreground="White"
+											   LetterSpacing="0.5"/>
+								</Border>
+
+								<!-- Message -->
+								<TextBlock Grid.Column="2"
+										   Classes="Monospace"
+										   Text="{Binding Message}"
+										   TextWrapping="Wrap"
+										   Foreground="#A0A0A0"
+										   VerticalAlignment="Top"
+										   Margin="0,2,0,0"
+										   LineHeight="18"/>
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+
+		<!-- Status Bar -->
+		<Border Grid.Row="2"
+				Background="{DynamicResource CardBackgroundBrush}"
+				Padding="16,10"
+				BorderThickness="0,1,0,0"
+				BorderBrush="{DynamicResource BorderBrush}">
+			<Grid ColumnDefinitions="*,Auto">
+				<TextBlock Grid.Column="0"
+						   Text="{Binding StatusText}"
+						   FontSize="12"
+						   VerticalAlignment="Center"
+						   Foreground="{DynamicResource ForegroundBrush}"
+						   Opacity="0.7"/>
+
+				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="24">
+					<StackPanel Orientation="Horizontal" Spacing="8">
+						<TextBlock Text="Total:" 
+								   FontSize="11" 
+								   Opacity="0.6" 
+								   VerticalAlignment="Center"
+								   Foreground="{DynamicResource ForegroundBrush}"/>
+						<TextBlock Text="{Binding TotalLogCount}" 
+								   FontWeight="Bold" 
+								   FontSize="13" 
+								   VerticalAlignment="Center"
+								   Foreground="{DynamicResource SystemAccentBrush}"/>
+					</StackPanel>
+
+					<Rectangle Width="1" Height="16" Fill="{DynamicResource BorderBrush}"/>
+
+					<StackPanel Orientation="Horizontal" Spacing="8">
+						<TextBlock Text="Filtered:" 
+								   FontSize="11" 
+								   Opacity="0.6" 
+								   VerticalAlignment="Center"
+								   Foreground="{DynamicResource ForegroundBrush}"/>
+						<TextBlock Text="{Binding FilteredLogCount}" 
+								   FontWeight="Bold" 
+								   FontSize="13" 
+								   VerticalAlignment="Center"
+								   Foreground="{DynamicResource SystemAccentBrush}"/>
+					</StackPanel>
+				</StackPanel>
+			</Grid>
+		</Border>
+	</Grid>
+</UserControl>

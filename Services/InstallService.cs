@@ -1,263 +1,364 @@
 ﻿using Serilog;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using SharpCompress.Readers;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
-using Yellowcake.Helpers;
 using Yellowcake.Models;
 
 namespace Yellowcake.Services;
 
 public class InstallService
 {
-    private readonly string _modsPath;
+    public string ModsPath { get; }
     private readonly PathService _pathService;
-
-    public string ModsPath => _modsPath;
 
     public InstallService(string modsPath, PathService pathService)
     {
-        _modsPath = modsPath ?? throw new ArgumentNullException(nameof(modsPath));
+        ModsPath = modsPath ?? throw new ArgumentNullException(nameof(modsPath));
         _pathService = pathService ?? throw new ArgumentNullException(nameof(pathService));
 
-        if (!Directory.Exists(_modsPath))
-            Directory.CreateDirectory(_modsPath);
-    }
-
-    public async Task InstallCategorizedMod(Mod mod, MemoryStream ms, string gamePath)
-    {
-        if (mod == null || ms == null) return;
-
-        string gameDir = GetGameDir(gamePath);
-        ms.Position = 0;
-
-        if (IsRawDll(ms))
+        if (!Directory.Exists(ModsPath))
         {
-            Log.Information("Installing raw DLL for {ModName}", mod.Name);
-            await InstallRawDll(ms, mod, gamePath);
-            return;
+            Directory.CreateDirectory(ModsPath);
+            Log.Information("[InstallService] Created mods directory: {Path}", ModsPath);
         }
+    }
 
-        string targetDir = mod.IsMission ? Path.Combine(_pathService.GetMissionsDirectory() ?? _modsPath, mod.Id)
-                         : mod.IsVoicePack ? Path.Combine(_pathService.GetVoicePacksDirectory() ?? _modsPath, mod.Id)
-                         : mod.IsLivery ? Path.Combine(gameDir, "BepInEx", "plugins", "LiveryPlus", mod.Id)
-                         : Path.Combine(_modsPath, mod.Id);
+    public async Task InstallModAsync(Mod mod, string archivePath, CancellationToken ct = default)
+    {
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+        if (string.IsNullOrWhiteSpace(archivePath)) throw new ArgumentNullException(nameof(archivePath));
+        if (!File.Exists(archivePath)) throw new FileNotFoundException($"Archive not found: {archivePath}");
 
-        if (!Directory.Exists(targetDir))
+        Log.Information("[InstallService] Installing {ModName} from {Archive}", mod.Name, archivePath);
+
+        var installPath = DetermineInstallPath(mod);
+
+        if (!Directory.Exists(installPath))
         {
-            Directory.CreateDirectory(targetDir);
+            Directory.CreateDirectory(installPath);
         }
-
-        bool isCorePlugin = mod.Id.Contains("WSOYappinator", StringComparison.OrdinalIgnoreCase) ||
-                            mod.Id.Contains("LiveryPlus", StringComparison.OrdinalIgnoreCase);
-
-        Log.Information("Extracting {ModName} to {TargetDir} (Core: {IsCore})", mod.Name, targetDir, isCorePlugin);
-
-        if (isCorePlugin)
-        {
-            await ExtractFlattened(ms, targetDir);
-        }
-        else
-        {
-            await ExtractToDirectory(ms, targetDir);
-        }
-
-        bool needsLinking = !mod.IsMission && !mod.IsVoicePack && !mod.IsLivery;
-        if (needsLinking)
-        {
-            Log.Debug("Linking standard mod: {ModId}", mod.Id);
-            LinkMod(mod.Id, gamePath, true);
-        }
-
-        Log.Information("Installation successful: {ModName}", mod.Name);
-    }
-
-    private bool IsRawDll(MemoryStream ms)
-    {
-        if (ms.Length < 2) return false;
-        var buffer = new byte[2];
-        ms.Position = 0;
-        ms.ReadExactly(buffer, 0, 2);
-        ms.Position = 0;
-        return buffer[0] == 0x4D && buffer[1] == 0x5A;
-    }
-
-    private async Task InstallRawDll(MemoryStream ms, Mod mod, string gamePath)
-    {
-        string targetDir = Path.Combine(_modsPath, mod.Id);
-        Directory.CreateDirectory(targetDir);
-
-        string dllPath = Path.Combine(targetDir, $"{mod.Id}.dll");
-        await File.WriteAllBytesAsync(dllPath, ms.ToArray());
-
-        LinkMod(mod.Id, gamePath, true);
-    }
-
-    public async Task ExtractFlattened(MemoryStream ms, string targetPath)
-    {
-        await Task.Run(() =>
-        {
-            using var archive = ArchiveFactory.Open(ms);
-            Directory.CreateDirectory(targetPath);
-
-            foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
-            {
-                string fileName = Path.GetFileName(entry.Key);
-                entry.WriteToFile(Path.Combine(targetPath, fileName), new ExtractionOptions { Overwrite = true });
-            }
-        });
-    }
-
-    public async Task ExtractToDirectory(MemoryStream ms, string targetPath)
-    {
-        if (ms == null || ms.Length == 0) throw new ArgumentException("Source stream is empty.");
-
-        await Task.Run(() =>
-        {
-            try
-            {
-                using var archive = ArchiveFactory.Open(ms);
-                string absoluteTarget = Path.GetFullPath(targetPath);
-                string rootPrefix = GetRootPrefix(archive);
-
-                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
-                {
-                    string normalizedKey = entry.Key.Replace('\\', '/');
-                    string relativePath = normalizedKey.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
-                        ? normalizedKey[rootPrefix.Length..].TrimStart('/')
-                        : normalizedKey;
-
-                    if (string.IsNullOrWhiteSpace(relativePath)) continue;
-
-                    string destination = Path.GetFullPath(Path.Combine(absoluteTarget, relativePath));
-                    if (!destination.StartsWith(absoluteTarget, StringComparison.OrdinalIgnoreCase)) continue;
-
-                    Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                    entry.WriteToFile(destination, new ExtractionOptions { Overwrite = true });
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Extraction failed for {Path}", targetPath);
-                throw;
-            }
-        });
-    }
-
-    public void LinkMod(string modId, string gamePath, bool enable)
-    {
-        if (string.IsNullOrWhiteSpace(modId)) return;
-
-        string gameDir = GetGameDir(gamePath);
-        string pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
-        string sourcePath = Path.Combine(_modsPath, modId);
-        string linkTarget = Path.Combine(pluginsDir, modId);
 
         try
         {
-            if (Path.Exists(linkTarget))
-            {
-                Log.Debug("Removing existing entry at {Path}", linkTarget);
-                var attributes = File.GetAttributes(linkTarget);
+            await Task.Run(() => ExtractArchive(archivePath, installPath, ct), ct);
 
-                if (attributes.HasFlag(FileAttributes.Directory))
-                {
-                    Directory.Delete(linkTarget, true);
-                }
-                else
-                {
-                    File.Delete(linkTarget);
-                }
-            }
-
-            if (enable)
-            {
-                if (!Directory.Exists(sourcePath))
-                {
-                    Log.Warning("Link source missing: {Path}", sourcePath);
-                    return;
-                }
-
-                if (!Directory.Exists(pluginsDir))
-                {
-                    Directory.CreateDirectory(pluginsDir);
-                }
-
-                Log.Information("Linking {ModId}: {Source} -> {Target}", modId, sourcePath, linkTarget);
-                Directory.CreateSymbolicLink(linkTarget, sourcePath);
-            }
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            Log.Error(ex, "Insufficient permissions to create symbolic link for {Id}", modId);
-            NotificationService.Instance.Error("Permission Denied: Run as Admin or enable Developer Mode.");
+            Log.Information("[InstallService] Successfully installed {ModName} to {Path}", mod.Name, installPath);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to manage link for {Id}", modId);
-            NotificationService.Instance.Error($"Link failure: {modId}");
-        }
-    }
-
-    public async Task ExtractBepInEx(MemoryStream ms, string targetDir)
-    {
-        await Task.Run(() =>
-        {
-            ms.Position = 0;
-            using var archive = new ZipArchive(ms);
-            string absoluteTarget = Path.GetFullPath(targetDir);
-
-            foreach (var entry in archive.Entries)
+            Log.Error(ex, "[InstallService] Installation failed for {ModName}", mod.Name);
+            
+            try
             {
-                string destPath = Path.GetFullPath(Path.Combine(absoluteTarget, entry.FullName));
-                if (!destPath.StartsWith(absoluteTarget, StringComparison.OrdinalIgnoreCase)) continue;
-
-                if (entry.FullName.EndsWith("/") || entry.FullName.EndsWith("\\"))
+                if (Directory.Exists(installPath))
                 {
-                    Directory.CreateDirectory(destPath);
-                }
-                else
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                    entry.ExtractToFile(destPath, true);
+                    Directory.Delete(installPath, true);
                 }
             }
+            catch (Exception cleanupEx)
+            {
+                Log.Warning(cleanupEx, "[InstallService] Failed to cleanup after failed installation");
+            }
+
+            throw;
+        }
+    }
+    public async Task ExtractWithSmartRoot(Stream archiveStream, string targetPath)
+    {
+        if (archiveStream == null) throw new ArgumentNullException(nameof(archiveStream));
+        if (string.IsNullOrWhiteSpace(targetPath)) throw new ArgumentNullException(nameof(targetPath));
+
+        await Task.Run(() =>
+        {
+            using var zipArchive = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: false);
+            
+            var entries = zipArchive.Entries.Where(e => !string.IsNullOrEmpty(e.Name)).ToList();
+            if (!entries.Any()) return;
+
+            var firstEntry = entries.First().FullName;
+            var rootCandidate = firstEntry.Contains('/') || firstEntry.Contains('\\')
+                ? firstEntry.Split(new[] { '/', '\\' }, 2)[0] + "/"
+                : null;
+
+            bool hasCommonRoot = rootCandidate != null && 
+                entries.All(e => e.FullName.StartsWith(rootCandidate, StringComparison.OrdinalIgnoreCase));
+
+            Directory.CreateDirectory(targetPath);
+
+            foreach (var entry in entries)
+            {
+                var relativePath = hasCommonRoot 
+                    ? entry.FullName.Substring(rootCandidate!.Length)
+                    : entry.FullName;
+
+                var destPath = Path.Combine(targetPath, relativePath);
+                var destDir = Path.GetDirectoryName(destPath);
+
+                if (!string.IsNullOrEmpty(destDir) && !Directory.Exists(destDir))
+                {
+                    Directory.CreateDirectory(destDir);
+                }
+
+                entry.ExtractToFile(destPath, overwrite: true);
+            }
+
+            Log.Debug("[InstallService] Extracted {Count} files to {Path} (smart root: {HasRoot})", 
+                entries.Count, targetPath, hasCommonRoot);
         });
     }
 
-    public void CleanupMods(string id)
+    public async Task InstallCategorizedMod(Mod mod, Stream archiveStream, string gamePath)
     {
-        string path = Path.Combine(_modsPath, id);
-        if (Directory.Exists(path)) Directory.Delete(path, true);
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+        if (archiveStream == null) throw new ArgumentNullException(nameof(archiveStream));
+
+        var finalDir = Path.Combine(ModsPath, mod.Id);
+        string? backupDir = null;
+
+        try
+        {
+            if (Directory.Exists(finalDir))
+            {
+                backupDir = finalDir + ".backup_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+                Log.Debug("[InstallService] Backing up existing installation to {Backup}", backupDir);
+                Directory.Move(finalDir, backupDir);
+            }
+
+            await ExtractWithSmartRoot(archiveStream, finalDir);
+
+            if (backupDir != null && Directory.Exists(backupDir))
+            {
+                Directory.Delete(backupDir, true);
+                Log.Debug("[InstallService] Removed backup directory");
+            }
+
+            Log.Information("[InstallService] Installed categorized mod {ModName} to {Path}", mod.Name, finalDir);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[InstallService] Failed to install categorized mod {ModName}", mod.Name);
+
+            if (backupDir != null && Directory.Exists(backupDir))
+            {
+                try
+                {
+                    if (Directory.Exists(finalDir))
+                    {
+                        Directory.Delete(finalDir, true);
+                    }
+                    Directory.Move(backupDir, finalDir);
+                    Log.Information("[InstallService] Restored backup after failed installation");
+                }
+                catch (Exception restoreEx)
+                {
+                    Log.Error(restoreEx, "[InstallService] Failed to restore backup");
+                }
+            }
+
+            throw;
+        }
     }
 
-    private string GetGameDir(string path) =>
-        Directory.Exists(path) ? path : Path.GetDirectoryName(path) ?? path;
-
-    private static string GetRootPrefix(IArchive archive)
+    public async Task InstallRawDll(Mod mod, Stream dllStream, string gamePath)
     {
-        var entries = archive.Entries.Where(e => !e.IsDirectory).ToList();
-        if (!entries.Any()) return string.Empty;
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+        if (dllStream == null) throw new ArgumentNullException(nameof(dllStream));
 
-        var bepEntry = entries.FirstOrDefault(e => e.Key.Contains("BepInEx", StringComparison.OrdinalIgnoreCase));
-        if (bepEntry != null)
+        var modDir = Path.Combine(ModsPath, mod.Id);
+        Directory.CreateDirectory(modDir);
+
+        var fileName = SanitizeFileName(mod.DownloadUrl) ?? $"{mod.Id}.dll";
+        if (!fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
         {
-            int idx = bepEntry.Key.IndexOf("BepInEx", StringComparison.OrdinalIgnoreCase);
-            return bepEntry.Key[..idx].Replace('\\', '/');
+            fileName += ".dll";
         }
 
-        string firstKey = entries[0].Key.Replace('\\', '/');
-        int slashIdx = firstKey.IndexOf('/');
-        if (slashIdx != -1)
+        var dllPath = Path.Combine(modDir, fileName);
+
+        await Task.Run(async () =>
         {
-            string root = firstKey[..(slashIdx + 1)];
-            if (entries.All(e => e.Key.Replace('\\', '/').StartsWith(root, StringComparison.OrdinalIgnoreCase)))
-                return root;
+            using var fileStream = new FileStream(dllPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            await dllStream.CopyToAsync(fileStream);
+        });
+
+        Log.Information("[InstallService] Installed raw DLL {FileName} to {Path}", fileName, modDir);
+    }
+
+    private string? SanitizeFileName(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+
+        try
+        {
+            var uri = new Uri(url);
+            var segments = uri.Segments;
+            var lastSegment = segments.LastOrDefault()?.Trim('/');
+
+            if (string.IsNullOrWhiteSpace(lastSegment)) return null;
+
+            var fileName = lastSegment.Split('?')[0];
+
+            var invalidChars = Path.GetInvalidFileNameChars();
+            foreach (var c in invalidChars)
+            {
+                fileName = fileName.Replace(c.ToString(), "_");
+            }
+
+            return fileName;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string DetermineInstallPath(Mod mod)
+    {
+        var gamePath = _pathService.GamePath;
+        if (string.IsNullOrEmpty(gamePath))
+        {
+            throw new InvalidOperationException("Game path not set");
         }
 
-        return string.Empty;
+        var gameDir = Path.GetDirectoryName(gamePath);
+        if (string.IsNullOrEmpty(gameDir))
+        {
+            throw new InvalidOperationException("Invalid game path");
+        }
+
+        // Voice packs go to WSOYappinator/audio
+        if (mod.IsVoicePack)
+        {
+            var voicePackDir = Path.Combine(gameDir, "BepInEx", "plugins", "WSOYappinator", "audio", mod.Id);
+            Log.Debug("[InstallService] Voice pack will install to: {Path}", voicePackDir);
+            return voicePackDir;
+        }
+
+        // Missions go to Missions folder
+        if (mod.IsMission)
+        {
+            var missionsDir = Path.Combine(gameDir, "Missions", mod.Id);
+            Log.Debug("[InstallService] Mission will install to: {Path}", missionsDir);
+            return missionsDir;
+        }
+
+        // Liveries and regular plugins go to BepInEx/plugins
+        var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins", mod.Id);
+        Log.Debug("[InstallService] Plugin will install to: {Path}", pluginsDir);
+        return pluginsDir;
+    }
+
+    private void ExtractArchive(string archivePath, string targetPath, CancellationToken ct)
+    {
+        try
+        {
+            Log.Debug("[InstallService] Extracting {Archive} to {Target}", archivePath, targetPath);
+
+            using var archive = ArchiveFactory.Open(archivePath);
+            
+            var entries = archive.Entries.Where(e => !e.IsDirectory).ToList();
+            Log.Debug("[InstallService] Found {Count} files to extract", entries.Count);
+
+            foreach (var entry in entries)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var destinationPath = Path.Combine(targetPath, entry.Key);
+                var destinationDir = Path.GetDirectoryName(destinationPath);
+
+                if (!string.IsNullOrEmpty(destinationDir))
+                {
+                    Directory.CreateDirectory(destinationDir);
+                }
+
+                entry.WriteToFile(destinationPath, new ExtractionOptions
+                {
+                    ExtractFullPath = true,
+                    Overwrite = true
+                });
+            }
+
+            Log.Information("[InstallService] Extracted {Count} files to {Path}", entries.Count, targetPath);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[InstallService] Failed to extract archive: {Archive}", archivePath);
+            
+            if (File.Exists(archivePath))
+            {
+                var fileInfo = new FileInfo(archivePath);
+                Log.Error("[InstallService] Archive size: {Size} bytes", fileInfo.Length);
+                
+                using var fs = File.OpenRead(archivePath);
+                var buffer = new byte[100];
+                var read = fs.Read(buffer, 0, 100);
+                var preview = System.Text.Encoding.ASCII.GetString(buffer, 0, Math.Min(read, 100));
+                Log.Error("[InstallService] File preview (first 100 bytes): {Preview}", preview);
+            }
+            
+            throw new InvalidOperationException(
+                "Failed to extract archive. The file may be corrupted or not a valid ZIP file. " +
+                "If this is a Google Drive link, the download may have failed.", ex);
+        }
+    }
+
+    public bool VerifyInstallation(Mod mod)
+    {
+        try
+        {
+            var installPath = DetermineInstallPath(mod);
+            
+            if (!Directory.Exists(installPath))
+            {
+                Log.Warning("[InstallService] Installation directory not found: {Path}", installPath);
+                return false;
+            }
+
+            var hasFiles = Directory.EnumerateFileSystemEntries(installPath, "*", SearchOption.AllDirectories).Any();
+            
+            if (!hasFiles)
+            {
+                Log.Warning("[InstallService] Installation directory is empty: {Path}", installPath);
+                return false;
+            }
+
+            Log.Debug("[InstallService] Installation verified for {ModId}", mod.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[InstallService] Verification failed for {ModId}", mod.Id);
+            return false;
+        }
+    }
+
+    public string? GetInstallPath(string modId)
+    {
+        var gamePath = _pathService.GamePath;
+        if (string.IsNullOrEmpty(gamePath)) return null;
+
+        var gameDir = Path.GetDirectoryName(gamePath);
+        if (string.IsNullOrEmpty(gameDir)) return null;
+
+        // Check all possible locations
+        var possiblePaths = new[]
+        {
+            Path.Combine(gameDir, "BepInEx", "plugins", modId),
+            Path.Combine(gameDir, "BepInEx", "plugins", "WSOYappinator", "audio", modId),
+            Path.Combine(gameDir, "Missions", modId)
+        };
+
+        return possiblePaths.FirstOrDefault(Directory.Exists);
     }
 }

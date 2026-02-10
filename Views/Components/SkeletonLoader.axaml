@@ -1,0 +1,42 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Yellowcake.Views.Components.SkeletonLoader">
+  
+  <UserControl.Styles>
+    <Style Selector="Border.Skeleton">
+      <Setter Property="Background">
+        <Setter.Value>
+          <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+            <LinearGradientBrush.GradientStops>
+              <GradientStop Color="#20FFFFFF" Offset="0"/>
+              <GradientStop Color="#40FFFFFF" Offset="0.5"/>
+              <GradientStop Color="#20FFFFFF" Offset="1"/>
+            </LinearGradientBrush.GradientStops>
+            <LinearGradientBrush.Transform>
+              <TranslateTransform X="-100"/>
+            </LinearGradientBrush.Transform>
+          </LinearGradientBrush>
+        </Setter.Value>
+      </Setter>
+
+      <!-- Simple shimmer via opacity pulse (avoids invalid property path) -->
+      <Style.Animations>
+        <Animation Duration="0:0:1.4" IterationCount="Infinite">
+          <KeyFrame Cue="0%">
+            <Setter Property="Opacity" Value="0.55"/>
+          </KeyFrame>
+          <KeyFrame Cue="50%">
+            <Setter Property="Opacity" Value="1"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="Opacity" Value="0.55"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+  </UserControl.Styles>
+
+  <Border Classes="Skeleton" 
+          CornerRadius="8"
+          ClipToBounds="True"/>
+</UserControl>

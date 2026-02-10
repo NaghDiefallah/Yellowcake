@@ -11,35 +11,64 @@ namespace Yellowcake.Services;
 public class DatabaseService
 {
     private readonly string _connectionString;
+    private readonly object _locker = new();
+
     public const string SettingsCollection = "settings";
     public const string AddonsCollection = "addons";
 
-    public DatabaseService()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string dbDir = Path.Combine(appData, "Yellowcake");
+    public DatabaseService() : this(null) { }
 
-        if (!Directory.Exists(dbDir))
+    public DatabaseService(string? connectionStringOrPath)
+    {
+        if (string.IsNullOrWhiteSpace(connectionStringOrPath))
         {
-            Directory.CreateDirectory(dbDir);
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string dbDir = Path.Combine(appData, "Yellowcake");
+
+            if (!Directory.Exists(dbDir))
+                Directory.CreateDirectory(dbDir);
+
+            string dbPath = Path.Combine(dbDir, "data.db");
+            _connectionString = $"Filename={dbPath};Connection=shared";
+            Log.Information("Database initialized for cross-platform use at: {Path}", dbPath);
+        }
+        else if (string.Equals(connectionStringOrPath, ":memory:", StringComparison.OrdinalIgnoreCase))
+        {
+            _connectionString = "Filename=:memory:;Connection=shared";
+            Log.Information("Database initialized in-memory for tests.");
+        }
+        else if (connectionStringOrPath.Contains('='))
+        {
+            _connectionString = connectionStringOrPath;
+            Log.Information("Database initialized with custom connection string");
+        }
+        else
+        {
+            var path = connectionStringOrPath;
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            _connectionString = $"Filename={path};Connection=shared";
+            Log.Information("Database initialized at: {Path}", path);
         }
 
-        string dbPath = Path.Combine(dbDir, "data.db");
-        _connectionString = $"Filename={dbPath};Connection=shared";
-
         BsonMapper.Global.Entity<Mod>().Id(m => m.Id);
-
-        Log.Information("Database initialized for cross-platform use at: {Path}", dbPath);
     }
 
     private ILiteDatabase GetDatabase() => new LiteDatabase(_connectionString);
 
     public void Upsert<T>(string collectionName, T item) where T : class
     {
+        if (item == null) return;
+
         try
         {
-            using var db = GetDatabase();
-            db.GetCollection<T>(collectionName).Upsert(item);
+            lock (_locker)
+            {
+                using var db = GetDatabase();
+                db.GetCollection<T>(collectionName).Upsert(item);
+            }
         }
         catch (Exception ex)
         {
@@ -51,13 +80,16 @@ public class DatabaseService
     {
         try
         {
-            using var db = GetDatabase();
-            return db.GetCollection<T>(collectionName).FindAll().ToList();
+            lock (_locker)
+            {
+                using var db = GetDatabase();
+                return db.GetCollection<T>(collectionName).FindAll().ToList();
+            }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Data retrieval error in {Collection}", collectionName);
-            return [];
+            return new List<T>();
         }
     }
 
@@ -65,8 +97,11 @@ public class DatabaseService
     {
         try
         {
-            using var db = GetDatabase();
-            db.GetCollection(collectionName).Delete(id);
+            lock (_locker)
+            {
+                using var db = GetDatabase();
+                db.GetCollection(collectionName).Delete(id);
+            }
         }
         catch (Exception ex)
         {
@@ -74,18 +109,24 @@ public class DatabaseService
         }
     }
 
+    public void Delete(string collectionName, string id)
+        => Delete(collectionName, new BsonValue(id));
+
     public void SaveSetting(string key, object? value)
     {
         if (value == null) return;
 
         try
         {
-            using var db = GetDatabase();
-            db.GetCollection<SettingItem>(SettingsCollection).Upsert(new SettingItem
+            lock (_locker)
             {
-                Id = key,
-                Value = value.ToString()
-            });
+                using var db = GetDatabase();
+                db.GetCollection<SettingItem>(SettingsCollection).Upsert(new SettingItem
+                {
+                    Id = key,
+                    Value = value.ToString()
+                });
+            }
         }
         catch (Exception ex)
         {
@@ -97,9 +138,12 @@ public class DatabaseService
     {
         try
         {
-            using var db = GetDatabase();
-            var item = db.GetCollection<SettingItem>(SettingsCollection).FindById(key);
-            return item?.Value ?? defaultValue;
+            lock (_locker)
+            {
+                using var db = GetDatabase();
+                var item = db.GetCollection<SettingItem>(SettingsCollection).FindById(key);
+                return item?.Value ?? defaultValue;
+            }
         }
         catch (Exception ex)
         {
@@ -119,6 +163,21 @@ public class DatabaseService
         catch
         {
             return defaultValue;
+        }
+    }
+
+    public void DeleteAll(string collectionName)
+    {
+        try
+        {
+            var collection = GetDatabase().GetCollection(collectionName);
+            collection.DeleteAll();
+            Log.Debug("Deleted all records from collection {Collection}", collectionName);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to delete all from collection {Collection}", collectionName);
+            throw;
         }
     }
 

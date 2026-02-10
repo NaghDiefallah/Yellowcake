@@ -1,14 +1,18 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Yellowcake.ViewModels"
-        xmlns:conv="using:Yellowcake.Converters"
-        xmlns:views="clr-namespace:Yellowcake.Views"
-        x:Class="Yellowcake.MainWindow"
+        xmlns:views="using:Yellowcake.Views"
+		xmlns:conv="using:Yellowcake.Converters"
+        x:Class="Yellowcake.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="Yellowcake"
-        Width="1100" Height="800"
-        Background="{DynamicResource DeepBackgroundBrush}"
-        WindowStartupLocation="CenterScreen"
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="600"
+        Title="Yellowcake Mod Manager"
+        Icon="avares://Yellowcake/Resources/icon.ico"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="{DynamicResource BackgroundBrush}"
+        KeyDown="Window_KeyDown"
+		WindowStartupLocation="CenterScreen"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="90"
         ExtendClientAreaChromeHints="NoChrome"
@@ -68,29 +72,78 @@
 		</Style>
 	</Window.Styles>
 
-	<Grid RowDefinitions="Auto, *, Auto">
-		<views:HeaderView Grid.Row="0"/>
+  <Panel>
+	  <Grid RowDefinitions="Auto, *, Auto">
+		  <views:HeaderView Grid.Row="0" DataContext="{Binding}"/>
 
-		<Panel Grid.Row="1">
-			<TabControl IsVisible="{Binding !IsSettingsOpen}">
-				<TabControl.ItemsPanel>
-					<ItemsPanelTemplate>
-						<UniformGrid Columns="2" Rows="1" />
-					</ItemsPanelTemplate>
-				</TabControl.ItemsPanel>
-				<TabItem Header="INSTALLED MODS">
-					<views:InstalledModsView Margin="16" />
-				</TabItem>
-				<TabItem Header="BROWSE">
-					<views:BrowseView Margin="16" />
-				</TabItem>
-			</TabControl>
+		  <Panel Grid.Row="1">
+			  <!-- Main Content (Library/Browse) -->
+			  <Border Padding="12" IsVisible="{Binding !IsOverlayOpen}">
+				  <TabControl>
+					  <TabControl.ItemsPanel>
+						  <ItemsPanelTemplate>
+							  <UniformGrid Columns="2" />
+						  </ItemsPanelTemplate>
+					  </TabControl.ItemsPanel>
 
-			<Border IsVisible="{Binding IsSettingsOpen}" Background="{DynamicResource DeepBackgroundBrush}" Padding="40">
-				<views:SettingsView />
-			</Border>
-		</Panel>
+					  <TabItem Header="Library">
+						  <views:InstalledModsView Margin="8" />
+					  </TabItem>
 
-		<views:FooterView Grid.Row="2"/>
-	</Grid>
+					  <TabItem Header="Browse">
+						  <views:BrowseView Margin="8" />
+					  </TabItem>
+				  </TabControl>
+			  </Border>
+
+			  <!-- Performance Dashboard Overlay -->
+			  <Border IsVisible="{Binding IsPerformanceDashboardOpen}"
+					  Background="{DynamicResource DeepBackgroundBrush}"
+					  Padding="32">
+				  <views:PerformanceDashboard />
+			  </Border>
+
+			  <!-- Log Viewer Overlay -->
+			  <Border IsVisible="{Binding IsLogViewerOpen}"
+					  Background="{DynamicResource DeepBackgroundBrush}"
+					  Padding="32">
+				  <views:LogViewerWindow />
+			  </Border>
+			  
+			  <!-- Settings Overlay -->
+			  <Border IsVisible="{Binding IsSettingsOpen}"
+					  Background="{DynamicResource DeepBackgroundBrush}"
+					  Padding="32">
+				  <views:SettingsView />
+			  </Border>
+		  </Panel>
+
+		  <views:FooterView Grid.Row="2" DataContext="{Binding}"/>
+	  </Grid>
+
+    <!-- Offline Mode Banner -->
+    <Border IsVisible="{Binding !IsOnline}" Background="#CC000000" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="20" CornerRadius="8" Padding="16">
+      <Grid ColumnDefinitions="Auto, *, Auto">
+        <PathIcon Grid.Column="0" Data="{StaticResource CloseIcon}" Width="16" Height="16" Foreground="#FFFF9800" Margin="0,0,12,0"/>
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="Offline Mode" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+          <TextBlock Text="Limited functionality. Showing cached content only." FontSize="12" Opacity="0.8" Foreground="White"/>
+        </StackPanel>
+        <Button Grid.Column="2" Classes="Icon" Command="{Binding TestConnectivityCommand}" ToolTip.Tip="Retry connection" Width="32" Height="32">
+          <PathIcon Data="{StaticResource RefreshIcon}" Width="14" Height="14" Foreground="White"/>
+        </Button>
+      </Grid>
+    </Border>
+
+    <!-- Batch Mode Banner -->
+    <Border IsVisible="{Binding IsBatchMode}" Background="#CC000000" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" CornerRadius="8" Padding="16,12">
+      <TextBlock Foreground="White" FontSize="13">
+        <Run Text="Batch Mode Active"/>
+        <Run Text="•"/>
+        <Run Text="Ctrl+A = Select All"/>
+        <Run Text="•"/>
+        <Run Text="Ctrl+D = Deselect All"/>
+      </TextBlock>
+    </Border>
+  </Panel>
 </Window>

@@ -2,6 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -12,8 +13,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Yellowcake.Models;
 using Yellowcake.Services;
+using Yellowcake.Views;
 
 namespace Yellowcake.ViewModels;
 
@@ -27,18 +31,54 @@ public partial class MainViewModel
     [ObservableProperty] private bool _isDarkMode = true;
     [ObservableProperty] private string _settingsShareCode = string.Empty;
     [ObservableProperty] private bool _isSettingsOpen;
+    [ObservableProperty] private bool _isPerformanceDashboardOpen;
+    [ObservableProperty] private bool _isLogViewerOpen;
     [ObservableProperty] private bool _autoLaunchGame;
     [ObservableProperty] private bool _useGpuAcceleration;
     [ObservableProperty] private bool _enableVerboseLogging;
     [ObservableProperty] private bool _useSecondaryManifest;
-    [ObservableProperty] private ObservableCollection<string> _bepInExVersions = new();
     [ObservableProperty] private bool _isHardwareAccelerationEnabled = true;
+    [ObservableProperty] public string _selectedSourceName = "Primary Source";
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(InstallSelectedVersionCommand))]
-    private string? _selectedBepInExVersion;
+    public bool IsOverlayOpen => IsSettingsOpen || IsPerformanceDashboardOpen || IsLogViewerOpen;
 
-    public IAsyncRelayCommand InstallSelectedBepInExCommand { get; }
+    public Dictionary<string, string> ManifestSources { get; } = new()
+    {
+        { "Primary Source", "https://gist.githubusercontent.com/NaghDiefallah/82544b5e011d78924b0ff7678e4180aa/raw/NOModsPrimary" },
+        { "Secondary Source", "https://gist.githubusercontent.com/NaghDiefallah/82544b5e011d78924b0ff7678e4180aa/raw/NOModsSecondary" },
+        { "Development Source (UNSTABLE)", "https://gist.githubusercontent.com/NaghDiefallah/82544b5e011d78924b0ff7678e4180aa/raw/NOModsTesting" },
+        { "Community Source", "https://kopterbuzz.github.io/NOModManifestTesting/manifest/manifest.json" }
+    };
+
+    partial void OnIsSettingsOpenChanged(bool value) 
+    {
+        if (value)
+        {
+            IsPerformanceDashboardOpen = false;
+            IsLogViewerOpen = false;
+        }
+        OnPropertyChanged(nameof(IsOverlayOpen));
+    }
+
+    partial void OnIsPerformanceDashboardOpenChanged(bool value)
+    {
+        if (value)
+        {
+            IsSettingsOpen = false;
+            IsLogViewerOpen = false;
+        }
+        OnPropertyChanged(nameof(IsOverlayOpen));
+    }
+
+    partial void OnIsLogViewerOpenChanged(bool value)
+    {
+        if (value)
+        {
+            IsSettingsOpen = false;
+            IsPerformanceDashboardOpen = false;
+        }
+        OnPropertyChanged(nameof(IsOverlayOpen));
+    }
 
     [RelayCommand]
     private void ToggleSettings()
@@ -47,14 +87,31 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private void RestartApplication()
+    private void TogglePerformanceDashboard()
     {
-        var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
-        System.Diagnostics.Process.Start(currentProcess.MainModule.FileName);
-        Environment.Exit(0);
+        IsPerformanceDashboardOpen = !IsPerformanceDashboardOpen;
     }
 
-    [RelayCommand] private void ClearCache() => NotificationService.Instance.Info("Cache cleared.");
+    [RelayCommand]
+    private void ToggleLogViewer()
+    {
+        IsLogViewerOpen = !IsLogViewerOpen;
+    }
+
+    [RelayCommand]
+    private void RestartApplication()
+    {
+        var currentProcess = Process.GetCurrentProcess();
+        var fileName = currentProcess.MainModule?.FileName;
+        if (fileName != null)
+        {
+            Process.Start(fileName);
+            Environment.Exit(0);
+        }
+    }
+
+    [RelayCommand] 
+    private void ClearCache() => NotificationService.Instance.Info("Cache cleared");
 
     private void InitializeSettings()
     {
@@ -66,10 +123,10 @@ public partial class MainViewModel
         IsDarkMode = GetBoolSetting("IsDarkMode", true);
 
         var themes = _themeService.GetAvailableThemes();
-        AvailableThemes = new ObservableCollection<string>(themes);
+        _availableThemes = new ObservableCollection<string>(themes);
 
         var savedTheme = _db.GetSetting(ThemeConfigKey);
-        SelectedTheme = themes.FirstOrDefault(t => t == savedTheme) ??
+        _selectedTheme = themes.FirstOrDefault(t => t == savedTheme) ??
                         themes.FirstOrDefault(t => t == "Dark") ??
                         themes.FirstOrDefault() ?? string.Empty;
     }
@@ -79,60 +136,116 @@ public partial class MainViewModel
     {
         try
         {
-            var settings = $"{CloseOnLaunch}|{AutoUpdateManifest}|{AutoUpdateMods}|{MinimizeToTray}|{ShowNotifications}|{IsDarkMode}";
-            SettingsShareCode = Convert.ToBase64String(Encoding.UTF8.GetBytes(settings));
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            var modLibrary = new ModLibrarySnapshot
             {
-                await desktop.MainWindow!.Clipboard!.SetTextAsync(SettingsShareCode);
-                NotificationService.Instance.Success("Settings code copied to clipboard.");
+                ExportDate = DateTime.UtcNow,
+                TotalMods = _installedMods.Count,
+                Mods = _installedMods.Select(m => new ModSnapshot
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Version = m.Version,
+                    Category = m.Category,
+                    IsEnabled = m.IsEnabled
+                }).ToList()
+            };
+
+            var json = JsonSerializer.Serialize(modLibrary, new JsonSerializerOptions 
+            { 
+                WriteIndented = false 
+            });
+            
+            SettingsShareCode = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+            {
+                var clipboard = TopLevel.GetTopLevel(desktop.MainWindow)?.Clipboard;
+                if (clipboard != null)
+                {
+                    await clipboard.SetTextAsync(SettingsShareCode);
+                    NotificationService.Instance.Success($"Mod library code copied ({_installedMods.Count} mods)");
+                }
             }
+
+            Log.Information("Generated share code for {Count} mods", _installedMods.Count);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to generate share code.");
+            Log.Error(ex, "Failed to generate share code");
+            NotificationService.Instance.Error("Failed to generate share code");
         }
     }
 
     [RelayCommand]
     public async Task PasteShareCode()
     {
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
         {
-            var text = await desktop.MainWindow!.Clipboard!.GetTextAsync();
-            if (!string.IsNullOrWhiteSpace(text))
+            var clipboard = TopLevel.GetTopLevel(desktop.MainWindow)?.Clipboard;
+            if (clipboard != null)
             {
-                SettingsShareCode = text;
-                ApplyShareCode();
+                var text = await clipboard.GetTextAsync();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    SettingsShareCode = text;
+                }
             }
         }
     }
 
     [RelayCommand]
-    public void ApplyShareCode()
+    public async Task ApplyShareCode()
     {
         if (string.IsNullOrWhiteSpace(SettingsShareCode)) return;
 
         try
         {
             var decodedData = Encoding.UTF8.GetString(Convert.FromBase64String(SettingsShareCode.Trim()));
-            var parts = decodedData.Split('|');
+            var library = JsonSerializer.Deserialize<ModLibrarySnapshot>(decodedData);
 
-            if (parts.Length == 6)
+            if (library == null || library.Mods == null || library.Mods.Count == 0)
             {
-                CloseOnLaunch = bool.Parse(parts[0]);
-                AutoUpdateManifest = bool.Parse(parts[1]);
-                AutoUpdateMods = bool.Parse(parts[2]);
-                MinimizeToTray = bool.Parse(parts[3]);
-                ShowNotifications = bool.Parse(parts[4]);
-                IsDarkMode = bool.Parse(parts[5]);
-                NotificationService.Instance.Success("Settings applied.");
+                NotificationService.Instance.Warning("Share code contains no mods");
+                return;
             }
+
+            bool confirmed = await NotificationService.Instance.ConfirmAsync(
+                "Restore Mod Library",
+                $"Install {library.Mods.Count} mod(s) from {library.ExportDate:yyyy-MM-dd}?",
+                TimeSpan.FromSeconds(15));
+
+            if (!confirmed) return;
+
+            var installedIds = new HashSet<string>(_installedMods.Select(x => x.Id), StringComparer.OrdinalIgnoreCase);
+            int queued = 0;
+
+            foreach (var snapshot in library.Mods)
+            {
+                if (installedIds.Contains(snapshot.Id)) continue;
+
+                var targetMod = _availableMods.FirstOrDefault(m => 
+                    string.Equals(m.Id, snapshot.Id, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(m.Name, snapshot.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (targetMod != null)
+                {
+                    await DownloadMod(targetMod);
+                    queued++;
+                }
+            }
+
+            NotificationService.Instance.Success($"Installed {queued} mod(s) from library");
+            Log.Information("Applied share code: {Queued} mods installed", queued);
+        }
+        catch (JsonException ex)
+        {
+            Log.Warning(ex, "Invalid mod library share code");
+            NotificationService.Instance.Error("Invalid share code format");
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Invalid share code.");
-            NotificationService.Instance.Error("The settings code is invalid.");
+            Log.Error(ex, "Failed to apply share code");
+            NotificationService.Instance.Error($"Failed to restore library: {ex.Message}");
         }
     }
 
@@ -147,19 +260,19 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to open themes folder.");
+            Log.Error(ex, "Failed to open themes folder");
         }
     }
 
     [RelayCommand]
     public void RefreshThemes()
     {
-        AvailableThemes.Clear();
+        _availableThemes.Clear();
         foreach (var theme in _themeService.GetAvailableThemes())
         {
-            AvailableThemes.Add(theme);
+            _availableThemes.Add(theme);
         }
-        NotificationService.Instance.Info("Themes refreshed.");
+        NotificationService.Instance.Info("Themes refreshed");
     }
 
     [RelayCommand]
@@ -172,7 +285,7 @@ public partial class MainViewModel
         ShowNotifications = true;
         IsDarkMode = true;
         SettingsShareCode = string.Empty;
-        NotificationService.Instance.Info("Settings restored to defaults.");
+        NotificationService.Instance.Info("Settings restored to defaults");
     }
 
     [RelayCommand]
@@ -185,27 +298,74 @@ public partial class MainViewModel
         var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export Mod List",
-            SuggestedFileName = "Yellowcake-Mod-List.txt",
-            DefaultExtension = "txt",
-            FileTypeChoices = new[] { FilePickerFileTypes.TextPlain }
+            SuggestedFileName = $"Yellowcake-Library-{DateTime.Now:yyyy-MM-dd}.json",
+            DefaultExtension = "json",
+            FileTypeChoices = new[] 
+            { 
+                new FilePickerFileType("Mod Library") { Patterns = new[] { "*.json" } },
+                FilePickerFileTypes.All 
+            }
         });
 
         if (file is null) return;
 
-        var sb = new StringBuilder();
-        sb.AppendLine("YELLOWCAKE MOD LIST EXPORT");
-        sb.AppendLine($"Date: {DateTime.Now:yyyy-MM-dd HH:mm}");
-        sb.AppendLine(new string('-', 30));
-
-        foreach (var mod in InstalledMods)
+        try
         {
-            sb.AppendLine($"[{mod.Category}] {mod.Name} by {mod.Author}");
-        }
+            var library = new ModLibrarySnapshot
+            {
+                ExportDate = DateTime.UtcNow,
+                TotalMods = _installedMods.Count,
+                Mods = _installedMods.Select(m => new ModSnapshot
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Version = m.Version,
+                    Category = m.Category,
+                    IsEnabled = m.IsEnabled
+                }).ToList()
+            };
 
-        await using var stream = await file.OpenWriteAsync();
-        await using var writer = new StreamWriter(stream);
-        await writer.WriteAsync(sb.ToString());
+            var json = JsonSerializer.Serialize(library, new JsonSerializerOptions 
+            { 
+                WriteIndented = true 
+            });
+
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(json);
+
+            NotificationService.Instance.Success($"Exported {_installedMods.Count} mod(s) to file");
+            Log.Information("Exported mod list: {Count} mods", _installedMods.Count);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to export mod list");
+            NotificationService.Instance.Error("Failed to export mod list");
+        }
     }
+
+    partial void OnSelectedSourceChanged(KeyValuePair<string, string> value)
+    {
+    if (string.IsNullOrWhiteSpace(value.Value)) return;
+
+    _manifestService.TargetUrl = value.Value;
+    _db.SaveSetting("ManifestSourceFriendlyName", value.Key);
+
+    Log.Information("Source switched to {Name}: {Url}", value.Key, value.Value);
+
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await LoadAvailableModsAsync();
+            await Dispatcher.UIThread.InvokeAsync(RefreshUI);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to refresh mods after source change to {Name}", value.Key);
+        }
+    });
+}
 
     [RelayCommand]
     public async Task ImportModList()
@@ -218,46 +378,66 @@ public partial class MainViewModel
         {
             Title = "Import Mod List",
             AllowMultiple = false,
-            FileTypeFilter = new[] { FilePickerFileTypes.TextPlain }
+            FileTypeFilter = new[] 
+            { 
+                new FilePickerFileType("Mod Library") { Patterns = new[] { "*.json" } },
+                FilePickerFileTypes.All 
+            }
         });
 
         if (files.Count == 0) return;
 
-        using var stream = await files[0].OpenReadAsync();
-        using var reader = new StreamReader(stream);
-        int importCount = 0;
-
-        var installedNames = new HashSet<string>(InstalledMods.Select(x => x.Name), StringComparer.OrdinalIgnoreCase);
-
-        while (await reader.ReadLineAsync() is { } line)
+        try
         {
-            if (!line.Contains('[') || !line.Contains(']')) continue;
+            using var stream = await files[0].OpenReadAsync();
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
 
-            try
+            var library = JsonSerializer.Deserialize<ModLibrarySnapshot>(json);
+
+            if (library == null || library.Mods == null || library.Mods.Count == 0)
             {
-                var namePart = line.Split(']', 2)[1].Split(" by ", 2)[0].Trim();
+                NotificationService.Instance.Warning("File contains no mods");
+                return;
+            }
 
-                if (installedNames.Contains(namePart)) continue;
+            bool confirmed = await NotificationService.Instance.ConfirmAsync(
+                "Import Mod Library",
+                $"Install {library.Mods.Count} mod(s) from {library.ExportDate:yyyy-MM-dd}?",
+                TimeSpan.FromSeconds(15));
 
-                var targetMod = AvailableMods.FirstOrDefault(m => m.Name.Equals(namePart, StringComparison.OrdinalIgnoreCase));
+            if (!confirmed) return;
+
+            var installedIds = new HashSet<string>(_installedMods.Select(x => x.Id), StringComparer.OrdinalIgnoreCase);
+            int queued = 0;
+
+            foreach (var snapshot in library.Mods)
+            {
+                if (installedIds.Contains(snapshot.Id)) continue;
+
+                var targetMod = _availableMods.FirstOrDefault(m => 
+                    string.Equals(m.Id, snapshot.Id, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(m.Name, snapshot.Name, StringComparison.OrdinalIgnoreCase));
+
                 if (targetMod != null)
                 {
-                    DownloadModCommand.Execute(targetMod);
-                    importCount++;
+                    await DownloadMod(targetMod);
+                    queued++;
                 }
             }
-            catch { continue; }
+
+            NotificationService.Instance.Success($"Installed {queued} mod(s) from library");
+            Log.Information("Imported mod list: {Queued} mods installed", queued);
         }
-
-        NotificationService.Instance.Info($"Queued {importCount} mods for installation.");
-    }
-
-    partial void OnSelectedThemeChanged(string value)
-    {
-        if (!string.IsNullOrEmpty(value))
+        catch (JsonException ex)
         {
-            _db.SaveSetting(ThemeConfigKey, value);
-            _themeService.ApplyTheme(value);
+            Log.Error(ex, "Invalid mod library file format");
+            NotificationService.Instance.Error("Invalid mod library file");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to import mod list");
+            NotificationService.Instance.Error($"Import failed: {ex.Message}");
         }
     }
 
@@ -267,4 +447,20 @@ public partial class MainViewModel
     partial void OnMinimizeToTrayChanged(bool value) => _db.SaveSetting("MinimizeToTray", value.ToString());
     partial void OnShowNotificationsChanged(bool value) => _db.SaveSetting("ShowNotifications", value.ToString());
     partial void OnIsDarkModeChanged(bool value) => _db.SaveSetting("IsDarkMode", value.ToString());
+}
+
+public class ModLibrarySnapshot
+{
+    public DateTime ExportDate { get; set; }
+    public int TotalMods { get; set; }
+    public List<ModSnapshot> Mods { get; set; } = new();
+}
+
+public class ModSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public bool IsEnabled { get; set; }
 }

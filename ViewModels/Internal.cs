@@ -1,5 +1,4 @@
 ﻿using Avalonia.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using System;
@@ -16,40 +15,21 @@ namespace Yellowcake.ViewModels;
 public partial class MainViewModel
 {
     private CancellationTokenSource? _searchDebounceTokenSource;
-
-    [ObservableProperty] private ModFilter _activeFilter = ModFilter.All;
-    [ObservableProperty] private string? _searchText;
-    [ObservableProperty] private bool _isLoading;
-    [ObservableProperty] private string _currentSort = "NameAsc";
-
-    partial void OnActiveFilterChanged(ModFilter value) => _ = ApplyFilters();
-
-    partial void OnSearchTextChanged(string? value)
-    {
-        _searchDebounceTokenSource?.Cancel();
-        _searchDebounceTokenSource = new CancellationTokenSource();
-        var token = _searchDebounceTokenSource.Token;
-
-        Task.Delay(300, token).ContinueWith(t =>
-        {
-            if (!t.IsCanceled)
-                Dispatcher.UIThread.Post(() => ApplyFiltersCommand.Execute(null));
-        }, TaskScheduler.Default);
-    }
+    private CancellationTokenSource? _filterTokenSource;
 
     [RelayCommand]
     private async Task SetSort(string sortMode)
     {
-        if (CurrentSort == sortMode) return;
-        CurrentSort = sortMode;
+        if (_currentSort == sortMode) return;
+        _currentSort = sortMode;
         await ApplyFilters();
     }
 
     [RelayCommand]
     private async Task SetFilter(ModFilter filter)
     {
-        if (ActiveFilter == filter) return;
-        ActiveFilter = filter;
+        if (_activeFilter == filter) return;
+        _activeFilter = filter;
         await ApplyFilters();
     }
 
@@ -58,76 +38,171 @@ public partial class MainViewModel
     {
         if (_allRemoteMods == null) return;
 
-        var search = SearchText?.Trim();
-        var currentFilter = ActiveFilter;
-        var sortMode = CurrentSort;
+        _filterTokenSource?.Cancel();
+        _filterTokenSource = new CancellationTokenSource();
+        var token = _filterTokenSource.Token;
 
-        var result = await Task.Run(() =>
+        var search = _searchText?.Trim();
+        var currentFilter = _activeFilter;
+        var sortMode = _currentSort;
+
+        _isFiltering = true;
+        OnPropertyChanged(nameof(IsFiltering));
+
+        try
         {
-            var query = _allRemoteMods.AsEnumerable();
-
-            query = currentFilter switch
+            var result = await Task.Run(() =>
             {
-                ModFilter.Voice => query.Where(m => m.IsVoicePack),
-                ModFilter.Livery => query.Where(m => m.IsLivery),
-                ModFilter.Missions => query.Where(m => m.IsMission),
-                ModFilter.Plugins => query.Where(m => !m.IsLivery && !m.IsVoicePack && !m.IsMission),
-                ModFilter.Installed => query.Where(m => m.IsInstalled),
-                _ => query
-            };
+                if (token.IsCancellationRequested) return Enumerable.Empty<Mod>();
 
-            if (!string.IsNullOrWhiteSpace(search))
+                var query = _allRemoteMods.AsEnumerable();
+
+                query = currentFilter switch
+                {
+                    ModFilter.Voice => query.Where(m => m.IsVoicePack),
+                    ModFilter.Livery => query.Where(m => m.IsLivery),
+                    ModFilter.Missions => query.Where(m => m.IsMission),
+                    ModFilter.Plugins => query.Where(m => !m.IsLivery && !m.IsVoicePack && !m.IsMission),
+                    ModFilter.Installed => query.Where(m => m.IsInstalled),
+                    _ => query
+                };
+
+                if (token.IsCancellationRequested) return Enumerable.Empty<Mod>();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(m =>
+                        (m.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Authors?.Any(a => a?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ?? false) ||
+                        (m.Tags?.Any(t => t?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ?? false));
+                }
+
+                if (token.IsCancellationRequested) return Enumerable.Empty<Mod>();
+
+                query = sortMode switch
+                {
+                    "NameDesc" => query.OrderByDescending(m => m.Name),
+                    "Author" => query.OrderBy(m => m.Authors?.FirstOrDefault() ?? string.Empty),
+                    "Date" => query.OrderByDescending(m => m.Id),
+                    _ => query.OrderBy(m => m.Name)
+                };
+
+                return query.ToList();
+            }, token);
+
+            if (token.IsCancellationRequested) return;
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                query = query.Where(m =>
-                    (m.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+                if (_availableMods.SequenceEqual(result)) return;
+
+                _availableMods.Clear();
+                foreach (var mod in result) _availableMods.Add(mod);
+            });
+
+            _ = Task.Run(() => FetchMissingFileSizesAsync(result.Take(20).ToList(), token));
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Debug("Filter operation cancelled");
+        }
+        finally
+        {
+            _isFiltering = false;
+            OnPropertyChanged(nameof(IsFiltering));
+        }
+    }
+
+    private async Task FetchMissingFileSizesAsync(List<Mod> mods, CancellationToken ct)
+    {
+        foreach (var mod in mods)
+        {
+            if (ct.IsCancellationRequested) break;
+            
+            if (mod.FileSizeBytes <= 0)
+            {
+                try
+                {
+                    await mod.FetchFileSizeAsync(ct);
+                    await Task.Delay(100, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Failed to fetch size for {Mod}", mod.Name);
+                }
             }
+        }
+    }
 
-            query = sortMode switch
-            {
-                "NameDesc" => query.OrderByDescending(m => m.Name),
-                "Author" => query.OrderBy(m => m.Author),
-                "Date" => query.OrderByDescending(m => m.Id),
-                _ => query.OrderBy(m => m.Name)
-            };
+    [RelayCommand]
+    private void OpenUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
 
-            return query.ToList();
-        });
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
+        try
         {
-            if (AvailableMods.SequenceEqual(result)) return;
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open URL: {Url}", url);
+            NotificationService.Instance.Error($"Failed to open link: {ex.Message}");
+        }
+    }
 
-            AvailableMods.Clear();
-            foreach (var mod in result) AvailableMods.Add(mod);
-        });
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        _searchText = string.Empty;
+        OnPropertyChanged(nameof(SearchText));
+        Dispatcher.UIThread.Post(() => _ = ApplyFilters());
+    }
+
+    [RelayCommand]
+    private void SearchByTag(string? tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag)) return;
+        _searchText = tag;
+        OnPropertyChanged(nameof(SearchText));
+        Dispatcher.UIThread.Post(() => _ = ApplyFilters());
     }
 
     public async Task RefreshUI()
     {
         var installed = _modService.GetInstalledMods();
-        var gameDetected = !string.IsNullOrEmpty(GamePath) && GamePath != "Not Set";
+        var gameDetected = !string.IsNullOrEmpty(_gamePath) && _gamePath != "Not Set";
         var bepInstalled = gameDetected && _modService.IsBepInExInstalled();
 
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            if (!InstalledMods.SequenceEqual(installed))
+            if (!_installedMods.SequenceEqual(installed))
             {
-                InstalledMods.Clear();
-                foreach (var mod in installed) InstalledMods.Add(mod);
+                _installedMods.Clear();
+                foreach (var mod in installed) _installedMods.Add(mod);
             }
 
-            IsGameDetected = gameDetected;
-            IsBepInstalled = bepInstalled;
+            _isGameDetected = gameDetected;
+            _isBepInstalled = bepInstalled;
+            OnPropertyChanged(nameof(IsGameDetected));
+            OnPropertyChanged(nameof(IsBepInstalled));
             UpdateGameStatus(gameDetected, bepInstalled);
         });
     }
 
     private void UpdateGameStatus(bool detected, bool modded)
     {
-        GameStatus = !detected ? "Awaiting game path..." :
+        _gameStatus = !detected ? "Awaiting game path..." :
                      !modded ? "BepInEx required" :
                      "Ready to play";
+        OnPropertyChanged(nameof(GameStatus));
     }
 
     private async Task SyncInstalledStates()
@@ -140,7 +215,7 @@ public partial class MainViewModel
             {
                 remote.IsInstalled = true;
                 remote.IsEnabled = local.IsEnabled;
-                remote.HasUpdate = _modService.IsUpdateAvailable(local, remote);
+                remote.HasUpdate = ModService.HasUpdate(local, remote);
                 local.LatestVersion = remote.Version;
                 _db.Upsert("addons", local);
             }
@@ -157,22 +232,26 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task RefreshModsAsync()
     {
-        GameStatus = "Refreshing mod list...";
-        IsLoading = true;
+        _gameStatus = "Refreshing mod list...";
+        OnPropertyChanged(nameof(GameStatus));
+        _isLoading = true;
+        OnPropertyChanged(nameof(IsLoading));
+        
         try
         {
             await LoadAvailableModsAsync();
-            NotificationService.Instance.Success("Mod list refreshed.");
+            NotificationService.Instance.Success("Mod list refreshed successfully");
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Refresh failed");
-            NotificationService.Instance.Error("Failed to refresh mods.");
+            NotificationService.Instance.Error($"Failed to refresh mods: {ex.Message}");
         }
         finally
         {
-            IsLoading = false;
-            UpdateGameStatus(IsGameDetected, IsBepInstalled);
+            _isLoading = false;
+            OnPropertyChanged(nameof(IsLoading));
+            UpdateGameStatus(_isGameDetected, _isBepInstalled);
         }
     }
 
@@ -180,43 +259,62 @@ public partial class MainViewModel
     {
         try
         {
-            var mods = await _modService.FetchRemoteManifest();
-            _allRemoteMods = mods ?? new List<Mod>();
+            _isLoading = true;
+            OnPropertyChanged(nameof(IsLoading));
+
+            var mods = await _manifestService.FetchRemoteManifestAsync(_shutdownCts.Token);
+            _allRemoteMods = mods;
+
+            foreach (var mod in _allRemoteMods)
+            {
+                mod.FinalizeFromManifest();
+            }
+
             await SyncInstalledStates();
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                _availableMods.Clear();
+                foreach (var mod in _allRemoteMods)
+                {
+                    _availableMods.Add(mod);
+                }
+            });
+
+            Log.Information("Loaded {Count} mods", mods.Count);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Manifest sync failed.");
-            await Dispatcher.UIThread.InvokeAsync(() => GameStatus = "Sync Error");
-            throw;
+            Log.Error(ex, "Failed to load mods from {Url}", _manifestService.TargetUrl);
+            _gameStatus = "Sync Error";
+            OnPropertyChanged(nameof(GameStatus));
+            NotificationService.Instance.Error("Failed to load mod list");
+        }
+        finally
+        {
+            _isLoading = false;
+            OnPropertyChanged(nameof(IsLoading));
         }
     }
 
     private async Task<bool> VerifyInstallationAsync(Mod mod, CancellationToken token)
     {
-        if (mod == null)
-        {
-            Log.Warning("Verification aborted: Mod object is null.");
-            return false;
-        }
+        if (mod == null) return false;
 
         return await Task.Run(() =>
         {
             try
             {
-                Log.Debug("Starting lightning-verify for {ModName} ({ModId})", mod.Name, mod.Id);
-
                 string targetPath;
-                bool isVoicePack = mod.Tags?.Any(t => t.Equals("voicepack", StringComparison.OrdinalIgnoreCase)) ?? false;
+                bool isVoicePack = mod.IsVoicePack;
 
                 if (isVoicePack)
                 {
-                    string gameDir = Path.GetDirectoryName(GamePath) ?? string.Empty;
+                    string gameDir = Path.GetDirectoryName(_gamePath) ?? string.Empty;
                     string audioDir = Path.Combine(gameDir, "BepInEx", "plugins", "WSOYappinator", "audio");
 
                     if (!Directory.Exists(audioDir))
                     {
-                        Log.Information("Creating missing voicepack directory: {Path}", audioDir);
                         Directory.CreateDirectory(audioDir);
                     }
 
@@ -227,34 +325,13 @@ public partial class MainViewModel
                     targetPath = Path.Combine(_installService.ModsPath, mod.Id);
                 }
 
-                if (token.IsCancellationRequested)
-                {
-                    Log.Information("Verification cancelled for {ModName}", mod.Name);
-                    return false;
-                }
+                if (token.IsCancellationRequested) return false;
 
-                // Using Path.Exists is faster as it performs a single system call for either file or directory
-                bool exists = Path.Exists(targetPath);
-
-                if (exists)
-                {
-                    Log.Information("Verification successful: {ModName} found at {Path}", mod.Name, targetPath);
-                }
-                else
-                {
-                    Log.Warning("Verification failed: {ModName} is missing from expected location {Path}", mod.Name, targetPath);
-                }
-
-                return exists;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                Log.Error(ex, "Permission denied while accessing path for {ModId}", mod.Id);
-                return false;
+                return Directory.Exists(targetPath) || File.Exists(targetPath);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Critical error during fast-verification of {ModId}", mod.Id);
+                Log.Error(ex, "Verification failed for {ModId}", mod.Id);
                 return false;
             }
         }, token);

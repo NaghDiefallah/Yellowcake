@@ -1,0 +1,389 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Yellowcake.ViewModels"
+             x:Class="Yellowcake.Views.PerformanceDashboard"
+             x:DataType="vm:PerformanceDashboardViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Border.StatCard">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="Padding" Value="28"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.2"/>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2"/>
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <Style Selector="Border.StatCard:pointerover">
+      <Setter Property="BoxShadow" Value="0 8 24 0 #20000000"/>
+      <Setter Property="RenderTransform" Value="translateY(-2px)"/>
+    </Style>
+
+    <Style Selector="TextBlock.StatLabel">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Opacity" Value="0.65"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="LetterSpacing" Value="1.2"/>
+      <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+    <Style Selector="TextBlock.StatValue">
+      <Setter Property="FontSize" Value="42"/>
+      <Setter Property="FontWeight" Value="Black"/>
+      <Setter Property="Foreground" Value="{DynamicResource SystemAccentBrush}"/>
+      <Setter Property="LineHeight" Value="1"/>
+    </Style>
+
+    <Style Selector="TextBlock.StatUnit">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Opacity" Value="0.7"/>
+      <Setter Property="Margin" Value="6,0,0,0"/>
+    </Style>
+
+    <Style Selector="TextBlock.StatSubtext">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Opacity" Value="0.55"/>
+      <Setter Property="Margin" Value="0,8,0,0"/>
+    </Style>
+
+    <Style Selector="Border.Section">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="Padding" Value="28"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    </Style>
+
+    <Style Selector="Border.ListItem">
+      <Setter Property="Background" Value="{DynamicResource DeepBackgroundBrush}"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="18"/>
+      <Setter Property="Margin" Value="0,0,0,10"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15"/>
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <Style Selector="Border.ListItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer>
+    <StackPanel Spacing="24" Margin="32" MaxWidth="1400">
+      
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="0,0,0,16">
+        <StackPanel Grid.Column="0" Grid.Row="0" Spacing="6">
+          <TextBlock Text="PERFORMANCE METRICS" 
+                     FontSize="34" 
+                     FontWeight="Black"
+                     Foreground="{DynamicResource SystemAccentBrush}"
+                     LetterSpacing="2.5"/>
+          <TextBlock Text="Real-time download analytics and system performance insights" 
+                     FontSize="14" 
+                     Opacity="0.65"
+                     Foreground="{DynamicResource SubTextBrush}"/>
+        </StackPanel>
+        
+        <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Bottom">
+          <Button Command="{Binding RefreshCommand}"
+                  Classes="Icon"
+                  ToolTip.Tip="Refresh Statistics"
+                  Width="40"
+                  Height="40">
+            <PathIcon Data="{StaticResource RefreshIcon}" Width="16" Height="16"/>
+          </Button>
+          
+          <Button Content="Export CSV" 
+                  Command="{Binding ExportCommand}"
+                  Classes="Tonal"
+                  Height="40"
+                  Padding="20,0"
+                  FontWeight="SemiBold"/>
+          
+          <Button Content="Clear History" 
+                  Command="{Binding ClearHistoryCommand}"
+                  Classes="Tonal"
+                  Height="40"
+                  Padding="20,0"
+                  FontWeight="SemiBold"
+                  Foreground="#FF6B6B"/>
+        </StackPanel>
+      </Grid>
+
+      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="20">
+        <Border Grid.Column="0" Classes="StatCard">
+          <StackPanel>
+            <TextBlock Text="TOTAL DOWNLOADS" Classes="StatLabel"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Stats.TotalDownloads}" Classes="StatValue"/>
+            </StackPanel>
+            <TextBlock Classes="StatSubtext">
+              <Run Text="{Binding Stats.SuccessfulDownloads}"/>
+              <Run Text="successful •"/>
+              <Run Text="{Binding Stats.FailedDownloads}"/>
+              <Run Text="failed"/>
+            </TextBlock>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="StatCard">
+          <StackPanel>
+            <TextBlock Text="DATA TRANSFERRED" Classes="StatLabel"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Stats.TotalDataDownloadedMB, StringFormat='{}{0:F1}'}" Classes="StatValue"/>
+              <TextBlock Text="MB" Classes="StatUnit"/>
+            </StackPanel>
+            <TextBlock Text="{Binding Stats.TotalDataDownloadedGB, StringFormat='{}{0:F2} GB total'}" 
+                       Classes="StatSubtext"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="StatCard">
+          <StackPanel>
+            <TextBlock Text="AVERAGE SPEED" Classes="StatLabel"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Stats.AverageSpeedMBps, StringFormat='{}{0:F2}'}" Classes="StatValue"/>
+              <TextBlock Text="MB/s" Classes="StatUnit"/>
+            </StackPanel>
+            <TextBlock Classes="StatSubtext">
+              <Run Text="Peak:"/>
+              <Run Text="{Binding Stats.FastestSpeedMBps, StringFormat='{}{0:F2} MB/s'}"/>
+            </TextBlock>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="3" Classes="StatCard">
+          <StackPanel>
+            <TextBlock Text="SUCCESS RATE" Classes="StatLabel"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Stats.SuccessRate, StringFormat='{}{0:F1}'}" Classes="StatValue"/>
+              <TextBlock Text="%" Classes="StatUnit"/>
+            </StackPanel>
+            <TextBlock Classes="StatSubtext">
+              <Run Text="{Binding Stats.SuccessfulDownloads}"/>
+              <Run Text="of"/>
+              <Run Text="{Binding Stats.TotalDownloads}"/>
+              <Run Text="completed"/>
+            </TextBlock>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <Border Classes="Section">
+        <StackPanel Spacing="20">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="4">
+              <TextBlock Text="Recent Activity" 
+                         FontSize="20" 
+                         FontWeight="Bold"/>
+              <TextBlock Text="Latest download operations" 
+                         FontSize="12" 
+                         Opacity="0.6"/>
+            </StackPanel>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Stats.RecentDownloads.Count, StringFormat='{}{0} entries'}"
+                       FontSize="12"
+                       Opacity="0.5"
+                       VerticalAlignment="Center"/>
+          </Grid>
+
+          <ScrollViewer MaxHeight="500" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Stats.RecentDownloads}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="ListItem">
+                    <Grid ColumnDefinitions="6,*,Auto,Auto" ColumnSpacing="16">
+                      <Border Grid.Column="0" 
+                              Width="6" 
+                              CornerRadius="3"
+                              Background="{DynamicResource SystemAccentBrush}"
+                              VerticalAlignment="Stretch"
+                              Opacity="0.8"/>
+
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                        <TextBlock Text="{Binding ModName}"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"/>
+                        <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:MMM dd, yyyy • HH:mm:ss}'}"
+                                   FontSize="11"
+                                   Opacity="0.55"/>
+                      </StackPanel>
+
+                      <StackPanel Grid.Column="2" 
+                                  Orientation="Horizontal" 
+                                  Spacing="6"
+                                  VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource BoxIcon}" 
+                                  Width="12" 
+                                  Height="12" 
+                                  Opacity="0.5"/>
+                        <TextBlock Text="{Binding BytesDownloadedMB, StringFormat='{}{0:F1} MB'}"
+                                   FontSize="13"
+                                   FontWeight="Medium"
+                                   Opacity="0.7"/>
+                      </StackPanel>
+
+                      <Border Grid.Column="3"
+                              Background="{DynamicResource SystemAccentBrushLight}"
+                              CornerRadius="6"
+                              Padding="10,6"
+                              VerticalAlignment="Center">
+                        <TextBlock Text="{Binding SpeedMBps, StringFormat='{}{0:F2} MB/s'}"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemAccentBrush}"/>
+                      </Border>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+
+          <StackPanel IsVisible="{Binding !Stats.RecentDownloads.Count}" 
+                      Spacing="12" 
+                      HorizontalAlignment="Center"
+                      Margin="0,40">
+            <PathIcon Data="{StaticResource BoxIcon}" 
+                      Width="48" 
+                      Height="48" 
+                      Opacity="0.25"
+                      HorizontalAlignment="Center"/>
+            <TextBlock Text="No recent downloads" 
+                       FontSize="15" 
+                       FontWeight="SemiBold"
+                       Opacity="0.5"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Download metrics will appear here after your first mod installation" 
+                       FontSize="12"
+                       Opacity="0.4"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       MaxWidth="350"
+                       TextAlignment="Center"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="Section">
+        <StackPanel Spacing="20">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="4">
+              <TextBlock Text="Top Downloads" 
+                         FontSize="20" 
+                         FontWeight="Bold"/>
+              <TextBlock Text="Most frequently downloaded mods" 
+                         FontSize="12" 
+                         Opacity="0.6"/>
+            </StackPanel>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Stats.TopMods.Count, StringFormat='Top {0}'}"
+                       FontSize="12"
+                       Opacity="0.5"
+                       VerticalAlignment="Center"/>
+          </Grid>
+
+          <ItemsControl ItemsSource="{Binding Stats.TopMods}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="ListItem">
+                  <Grid ColumnDefinitions="50,*,Auto,Auto" ColumnSpacing="18">
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource SystemAccentBrush}"
+                            CornerRadius="12"
+                            Width="50" 
+                            Height="50">
+                      <TextBlock Text="{Binding Rank, StringFormat='#{0}'}"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 FontWeight="Black"
+                                 FontSize="16"
+                                 Foreground="White"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
+                      <TextBlock Text="{Binding ModName}"
+                                 FontWeight="SemiBold"
+                                 FontSize="15"/>
+                      <ProgressBar Value="{Binding PercentOfMax}"
+                                   Height="6"
+                                   Foreground="{DynamicResource SystemAccentBrush}"
+                                   Background="#15FFFFFF"
+                                   CornerRadius="3"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="2"
+                            Background="{DynamicResource DeepBackgroundBrush}"
+                            CornerRadius="8"
+                            Padding="12,8"
+                            VerticalAlignment="Center">
+                      <TextBlock FontSize="13" FontWeight="SemiBold" Opacity="0.7">
+                        <Run Text="{Binding Count}"/>
+                        <Run Text="downloads" FontWeight="Normal"/>
+                      </TextBlock>
+                    </Border>
+
+                    <Border Grid.Column="3"
+                            Background="{DynamicResource DeepBackgroundBrush}"
+                            CornerRadius="8"
+                            Padding="12,8"
+                            VerticalAlignment="Center">
+                      <TextBlock Text="{Binding TotalMB, StringFormat='{}{0:F1} MB'}"
+                                 FontSize="13"
+                                 FontWeight="SemiBold"
+                                 Opacity="0.7"/>
+                    </Border>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <StackPanel IsVisible="{Binding !Stats.TopMods.Count}" 
+                      Spacing="12" 
+                      HorizontalAlignment="Center"
+                      Margin="0,40">
+            <PathIcon Data="{StaticResource StatsIcon}" 
+                      Width="48" 
+                      Height="48" 
+                      Opacity="0.25"
+                      HorizontalAlignment="Center"/>
+            <TextBlock Text="No statistics available" 
+                       FontSize="15" 
+                       FontWeight="SemiBold"
+                       Opacity="0.5"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Download history will populate this leaderboard" 
+                       FontSize="12"
+                       Opacity="0.4"
+                       HorizontalAlignment="Center"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Background="{DynamicResource CardBackgroundBrush}"
+              CornerRadius="12"
+              Padding="20"
+              BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="1"
+              Opacity="0.5">
+        <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+          <PathIcon Data="{StaticResource InfoIcon}" Width="14" Height="14" Opacity="0.6"/>
+          <TextBlock Text="Performance data is stored locally and persists between sessions" 
+                     FontSize="12"
+                     Opacity="0.7"/>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

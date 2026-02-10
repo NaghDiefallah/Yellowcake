@@ -1,0 +1,135 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Yellowcake.ViewModels"
+        x:Class="Yellowcake.Views.DiagnosticsWindow"
+        x:DataType="vm:DiagnosticsViewModel"
+        Title="Diagnostics"
+        Width="900" Height="700"
+        Icon="avares://Yellowcake/Resources/icon.ico"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BackgroundBrush}">
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+    <!-- Header -->
+    <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,24">
+      <TextBlock Text="DIAGNOSTICS"
+                 FontSize="28"
+                 FontWeight="Black"
+                 Foreground="{DynamicResource SystemAccentBrush}"
+                 LetterSpacing="2"/>
+      <TextBlock Text="System information and performance metrics"
+                 FontSize="13"
+                 Opacity="0.7"/>
+    </StackPanel>
+
+    <!-- Content -->
+    <TabControl Grid.Row="1">
+      <!-- System Info Tab -->
+      <TabItem Header="System Info">
+        <ScrollViewer>
+          <StackPanel Spacing="16" Margin="12">
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="8"
+                    Padding="20"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1">
+              <StackPanel Spacing="12">
+                <TextBlock Text="System Information" FontWeight="Bold" FontSize="16"/>
+                <TextBlock Text="{Binding SystemInfo}"
+                           FontFamily="Consolas, Courier New"
+                           FontSize="12"/>
+              </StackPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+              <Border Grid.Column="0"
+                      Background="{DynamicResource CardBackgroundBrush}"
+                      CornerRadius="8"
+                      Padding="20"
+                      BorderBrush="{DynamicResource BorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="MEMORY USAGE" FontSize="11" Opacity="0.6" FontWeight="Bold"/>
+                  <TextBlock Text="{Binding AppMemoryUsage}" 
+                             FontSize="24" 
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource SystemAccentBrush}"/>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="1"
+                      Background="{DynamicResource CardBackgroundBrush}"
+                      CornerRadius="8"
+                      Padding="20"
+                      BorderBrush="{DynamicResource BorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="CACHE SIZE" FontSize="11" Opacity="0.6" FontWeight="Bold"/>
+                  <TextBlock Text="{Binding CacheSize}" 
+                             FontSize="24" 
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource SystemAccentBrush}"/>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="2"
+                      Background="{DynamicResource CardBackgroundBrush}"
+                      CornerRadius="8"
+                      Padding="20"
+                      BorderBrush="{DynamicResource BorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="DATABASE SIZE" FontSize="11" Opacity="0.6" FontWeight="Bold"/>
+                  <TextBlock Text="{Binding DatabaseSize}" 
+                             FontSize="24" 
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource SystemAccentBrush}"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Assemblies Tab -->
+      <TabItem Header="Loaded Assemblies">
+        <ListBox ItemsSource="{Binding LoadedAssemblies}"
+                 Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border Padding="12"
+                      BorderThickness="0,0,0,1"
+                      BorderBrush="{DynamicResource BorderBrush}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Location}" 
+                               FontSize="11" 
+                               Opacity="0.6"
+                               TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding Version}"
+                             VerticalAlignment="Center"
+                             FontFamily="Consolas"
+                             FontSize="11"/>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </TabItem>
+    </TabControl>
+
+    <!-- Actions -->
+    <StackPanel Grid.Row="2" 
+                Orientation="Horizontal" 
+                Spacing="12" 
+                HorizontalAlignment="Right"
+                Margin="0,16,0,0">
+      <Button Content="Refresh" Command="{Binding RefreshCommand}" Padding="20,10"/>
+      <Button Content="Clear Cache" Command="{Binding ClearCacheCommand}" Padding="20,10"/>
+      <Button Content="Export Report" Command="{Binding ExportDiagnosticsCommand}" Padding="20,10"/>
+    </StackPanel>
+  </Grid>
+</Window>

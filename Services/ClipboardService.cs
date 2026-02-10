@@ -28,6 +28,6 @@ public static class ClipboardService
     public static async Task<string?> GetTextAsync()
     {
         var clipboard = GetClipboard();
-        return clipboard != null ? await clipboard.GetTextAsync() : null;
+        return clipboard != null ? await ClipboardExtensions.TryGetTextAsync(clipboard) : null;
     }
 }

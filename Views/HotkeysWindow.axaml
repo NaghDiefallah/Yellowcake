@@ -1,0 +1,78 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Yellowcake.ViewModels"
+        x:Class="Yellowcake.Views.HotkeysWindow"
+        x:DataType="vm:HotkeysViewModel"
+        Title="Keyboard Shortcuts"
+        Width="700" Height="600"
+        Icon="avares://Yellowcake/Resources/icon.ico"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BackgroundBrush}">
+
+  <Grid RowDefinitions="Auto,*" Margin="20">
+    <!-- Header -->
+    <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,24">
+      <TextBlock Text="KEYBOARD SHORTCUTS"
+                 FontSize="28"
+                 FontWeight="Black"
+                 Foreground="{DynamicResource SystemAccentBrush}"
+                 LetterSpacing="2"/>
+      <TextBlock Text="Quick reference for all available keyboard shortcuts"
+                 FontSize="13"
+                 Opacity="0.7"/>
+    </StackPanel>
+
+    <!-- Shortcuts List -->
+    <ScrollViewer Grid.Row="1">
+      <ItemsControl ItemsSource="{Binding HotkeyGroups}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Spacing="12" Margin="0,0,0,32">
+              <!-- Category Header -->
+              <TextBlock Text="{Binding Category}"
+                         FontSize="18"
+                         FontWeight="Bold"
+                         Foreground="{DynamicResource SystemAccentBrush}"/>
+
+              <!-- Hotkeys -->
+              <ItemsControl ItemsSource="{Binding Hotkeys}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                            CornerRadius="8"
+                            Padding="16,12"
+                            Margin="0,0,0,8"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1">
+                      <Grid ColumnDefinitions="200,*">
+                        <!-- Keyboard Keys -->
+                        <Border Grid.Column="0"
+                                Background="{DynamicResource DeepBackgroundBrush}"
+                                CornerRadius="6"
+                                Padding="12,8"
+                                HorizontalAlignment="Left">
+                          <TextBlock Text="{Binding Keys}"
+                                     FontFamily="Consolas, Courier New"
+                                     FontWeight="SemiBold"
+                                     FontSize="13"
+                                     Foreground="{DynamicResource SystemAccentBrush}"/>
+                        </Border>
+
+                        <!-- Description -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Description}"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
+                                   Margin="16,0,0,0"/>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</Window>
