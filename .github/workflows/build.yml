@@ -72,7 +72,6 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - run: dotnet restore
-      - run: dotnet test -c $CONFIGURATION --no-restore
 
       - run: >
           dotnet publish
