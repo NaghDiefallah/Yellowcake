@@ -15,9 +15,9 @@
 		<TrimMode>link</TrimMode>
 
 		<DebugType>embedded</DebugType>
-		<Version>1.2.7.1</Version>
-		<AssemblyVersion>1.2.7.1</AssemblyVersion>
-		<FileVersion>1.2.7.1</FileVersion>
+		<Version>1.2.7.2</Version>
+		<AssemblyVersion>1.2.7.2</AssemblyVersion>
+		<FileVersion>1.2.7.2</FileVersion>
 		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -47,10 +47,10 @@
 		<PackageReference Include="Polly.RateLimiting" Version="8.6.5" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
 		<PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="5.0.0" />
-		<PackageReference Include="SharpCompress" Version="0.44.5" />
-		<PackageReference Include="Serilog" Version="4.3.0" />
+		<PackageReference Include="Serilog" Version="4.3.1" />
 		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="SharpCompress" Version="0.44.5" />
 		<PackageReference Include="xunit" Version="2.9.3" />
 		<PackageReference Include="xunit.abstractions" Version="2.0.3" />
 		<PackageReference Include="xunit.analyzers" Version="1.27.0">
@@ -62,6 +62,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="RandomMods\" />
+	  <Folder Include="Mods\" />
 	</ItemGroup>
 </Project>

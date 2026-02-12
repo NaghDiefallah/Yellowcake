@@ -41,7 +41,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
 
     private List<Mod> _allRemoteMods = new();
     private string CurrentVersion =>
-        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(4) ?? "1.0.0.0";
     private const string ThemeConfigKey = "SelectedTheme";
 
     public string AppVersion => $"v{CurrentVersion}";

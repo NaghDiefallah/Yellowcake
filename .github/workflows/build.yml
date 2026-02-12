@@ -12,9 +12,10 @@ permissions:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -31,35 +32,58 @@ jobs:
             asset_path: ./publish/osx-arm64/Yellowcake
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
 
-    - name: Restore dependencies
+    - name: Restore Dependencies
       run: dotnet restore
 
-    - name: Publish
-      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish/${{ matrix.rid }}
+    - name: Publish Application
+      run: >
+        dotnet publish -c Release 
+        -r ${{ matrix.rid }} 
+        --self-contained true 
+        -p:PublishSingleFile=true 
+        -p:IncludeNativeLibrariesForSelfExtract=true 
+        -o ./publish/${{ matrix.rid }}
 
-    # Linux-only: Generate AppImage
-    - name: Create AppImage
+    - name: Create AppImage (Linux Only)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update && sudo apt-get install -y fuse
-        wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        wget -q -O appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool
+        
         mkdir -p AppDir/usr/bin
         cp ./publish/linux-x64/Yellowcake AppDir/usr/bin/
-        cp Resources/icon.png AppDir/Yellowcake.png
-        echo -e "[Desktop Entry]\nName=Yellowcake\nExec=Yellowcake\nIcon=Yellowcake\nType=Application\nCategories=Game;" > AppDir/Yellowcake.desktop
-        echo -e '#!/bin/sh\nexec "$(dirname "$0")/usr/bin/Yellowcake" "$@"' > AppDir/AppRun
+        
+        if [ -f Resources/icon.png ]; then
+          cp Resources/icon.png AppDir/Yellowcake.png
+        fi
+        
+        cat <<EOF > AppDir/Yellowcake.desktop
+        [Desktop Entry]
+        Name=Yellowcake
+        Exec=Yellowcake
+        Icon=Yellowcake
+        Type=Application
+        Categories=Game;
+        EOF
+        
+        cat <<EOF > AppDir/AppRun
+        #!/bin/sh
+        exec "\$(dirname "\$0")/usr/bin/Yellowcake" "\$@"
+        EOF
         chmod +x AppDir/AppRun
+        
         ARCH=x86_64 ./appimagetool AppDir Yellowcake-x86_64.AppImage
 
-    - name: Upload Artifacts
+    - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}

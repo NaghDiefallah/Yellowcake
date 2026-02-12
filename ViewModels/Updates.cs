@@ -223,6 +223,8 @@ del ""%~f0""";
                 return;
             }
 
+            if (latest <= current) return;
+
             if (latest > current)
             {
                 var result = await Dispatcher.UIThread.InvokeAsync(async () =>
