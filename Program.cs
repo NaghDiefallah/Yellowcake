@@ -64,7 +64,7 @@ class Program
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
-        Log.Information("=== Yellowcake Mod Manager Starting ===");
+        Log.Information("=== Starting ===");
         Log.Information("Application Version: {Version}", 
             System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
         Log.Information("OS: {OS}", Environment.OSVersion);
