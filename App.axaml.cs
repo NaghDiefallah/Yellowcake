@@ -2,12 +2,15 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Windows.Input;
 using Yellowcake.Services;
 using Yellowcake.ViewModels;
 using Yellowcake.Views;
-using System;
-using System.IO;
-using System.Linq;
 
 namespace Yellowcake;
 
@@ -64,12 +67,57 @@ public partial class App : Application
     {
         if (args == null || args.Length == 0) return;
 
-        if (args.Contains("--launch"))
+        var tokens = new Queue<string>(args);
+
+        while (tokens.Count > 0)
         {
-            if (vm.LaunchGameCommand.CanExecute(null))
+            var flag = tokens.Dequeue().ToLowerInvariant();
+
+            switch (flag)
             {
-                vm.LaunchGameCommand.Execute(null);
+                case "--launch":
+                    TryExecute(vm.LaunchGameCommand);
+                    break;
+
+                //case "--file":
+                //    if (TryGetNext(tokens, out var filePath))
+                //        TryExecute(vm.OpenFileCommand, filePath);
+                //    break;
+
+                //case "--user":
+                //    if (TryGetNext(tokens, out var user))
+                //        vm.CurrentUser = user;
+                //    break;
+
+                //case "--debug":
+                //    vm.EnableLogging = true;
+                //    break;
+
+                default:
+                    if (flag == "-l") goto case "--launch";
+                    // if (flag == "-d") goto case "--debug";
+                    Debug.WriteLine($"Unknown argument: {flag}");
+                    break;
             }
+        }
+    }
+
+    private bool TryGetNext(Queue<string> tokens, out string value)
+    {
+        value = string.Empty;
+        if (tokens.TryPeek(out var next) && !next.StartsWith("-"))
+        {
+            value = tokens.Dequeue();
+            return true;
+        }
+        return false;
+    }
+
+    private void TryExecute(ICommand command, object? parameter = null)
+    {
+        if (command?.CanExecute(parameter) == true)
+        {
+            command.Execute(parameter);
         }
     }
 

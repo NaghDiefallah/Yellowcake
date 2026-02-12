@@ -1,1006 +1,1785 @@
 [
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/qwerty1423/no-autopilot-mod/releases/download/v4.13.11/com.qwerty1423.NOAutopilot-4.13.11.zip",
+                "fileName": "com.qwerty1423.NOAutopilot-4.13.11.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:871080eae9abd291287228701ce517ce8423228583f9cb1e19e75775f196d096",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "4.13.11"
+            }
+        ],
         "authors": [
             "qwerty1423"
         ],
         "description": "Advanced flight control systems with a full-featured autopilot.",
         "displayName": "Autopilot Mod",
-        "downloadUrl": "https://github.com/qwerty1423/no-autopilot-mod/releases/download/v4.13.11/com.qwerty1423.NOAutopilot-4.13.11.zip",
-        "hash": "sha256:871080eae9abd291287228701ce517ce8423228583f9cb1e19e75775f196d096",
         "id": "no-autopilot-mod",
         "infoUrl": "https://github.com/qwerty1423/no-autopilot-mod",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "4.13.11"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/KopterBuzz/NOBlackBox/releases/download/0.3.8.2/NOBlackBox-0.3.8.2.zip",
+                "fileName": "NOBlackBox-0.3.8.2.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:4a1b37d5b3cde5ac5b53b86ef85d7c9ad3fe1b88935021cf18eb62f99c69d6bf",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "0.3.8.2"
+            }
+        ],
         "authors": [
-            "KopterBuzz"
+            "kopterbuzz"
         ],
         "description": "Tacview-compatible telemetry exporter for detailed mission debriefing.",
         "displayName": "NO Black Box",
-        "downloadUrl": "https://github.com/KopterBuzz/NOBlackBox/releases/download/0.3.8.2/NOBlackBox-0.3.8.2.zip",
-        "hash": "sha256:4a1b37d5b3cde5ac5b53b86ef85d7c9ad3fe1b88935021cf18eb62f99c69d6bf",
         "id": "NOBlackBox",
         "infoUrl": "https://github.com/KopterBuzz/NOBlackBox",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "0.3.8.2",
-        "fileSizeBytes": 71214
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/KopterBuzz/NOCursorOverride/releases/download/0.0.2/NOCursorOverride-0.0.2.zip",
+                "fileName": "NOCursorOverride-0.0.2.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:bac8d3d0cdfbc9c77edc4a99994eb5e660641a9c9096018a700e783e19cec0e9",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "0.0.2"
+            }
+        ],
         "authors": [
-            "KopterBuzz"
+            "kopterbuzz"
         ],
         "description": "Customizable cursor replacement and UI skinning utility.",
         "displayName": "NO Cursor Override",
-        "downloadUrl": "https://github.com/KopterBuzz/NOCursorOverride/releases/download/0.0.2/NOCursorOverride-0.0.2.zip",
-        "hash": "sha256:bac8d3d0cdfbc9c77edc4a99994eb5e660641a9c9096018a700e783e19cec0e9",
         "id": "NOCursorOverride",
         "infoUrl": "https://github.com/KopterBuzz/NOCursorOverride",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "0.0.2"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/KopterBuzz/NOFrameLimiter/releases/download/0.0.2/NOFrameLimiter-0.0.2.zip",
+                "fileName": "NOFrameLimiter-0.0.2.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:f129c353228ef32a9b9a23ef1818b59441ce07f4b04aa1995c32aa8b80289793",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "0.0.2"
+            }
+        ],
         "authors": [
-            "KopterBuzz"
+            "kopterbuzz"
         ],
         "description": "Global FPS limiter for smoother performance and improved stability.",
         "displayName": "NO Frame Limiter",
-        "downloadUrl": "https://github.com/KopterBuzz/NOFrameLimiter/releases/download/0.0.2/NOFrameLimiter-0.0.2.zip",
-        "hash": "sha256:f129c353228ef32a9b9a23ef1818b59441ce07f4b04aa1995c32aa8b80289793",
         "id": "NOFrameLimiter",
         "infoUrl": "https://github.com/KopterBuzz/NOFrameLimiter",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "0.0.2"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/releases/download/2.1.1/com.nikkorap.WSOYappinator_2.1.1.dll",
+                "fileName": "com.nikkorap.WSOYappinator_2.1.1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:c5acfa50210aca58ff226b9a07c82f11aed14553c97a31b8d5042862ab0ee1eb",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "2.1.1"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Core framework enabling custom WSO and AWACS voice packs.",
         "displayName": "WSO Yappinator",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/releases/download/2.1.1/com.nikkorap.WSOYappinator_2.1.1.dll",
-        "hash": "sha256:c5acfa50210aca58ff226b9a07c82f11aed14553c97a31b8d5042862ab0ee1eb",
         "id": "WSOYappinator",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "2.1.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/AWACS%20Sky%20Eye%20(by%20Littlesneez).7z",
+                "fileName": "AWACS Sky Eye (by Littlesneez).7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Littlesneez"
+            "littlesneez"
         ],
         "description": "Custom AWACS Sky Eye dialogue voice pack.",
         "displayName": "AWACS Sky Eye",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/AWACS%20Sky%20Eye%20(by%20Littlesneez).7z",
-        "hash": "null",
         "id": "skyeye_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/WSO%20Jester%20(by%20lazy1lol).7z",
+                "fileName": "WSO Jester (by lazy1lol).7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
             "lazy1lol"
         ],
         "description": "Jester AI backseater personality voice pack.",
         "displayName": "WSO Jester",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/WSO%20Jester%20(by%20lazy1lol).7z",
-        "hash": "null",
         "id": "jester_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/Prez%20(by%20Nikkorap).7z",
+                "fileName": "Prez (by Nikkorap).7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Classic backseater dialogue voice pack.",
         "displayName": "Prez",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/Prez%20(by%20Nikkorap).7z",
-        "hash": "null",
         "id": "prez_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "Voice Pack"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/Pixy%20(by%20Littlesneez).7z",
+                "fileName": "Pixy (by Littlesneez).7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Littlesneez"
+            "littlesneez"
         ],
         "description": "Solo Wing Pixy-inspired combat dialogue voice pack.",
         "displayName": "Pixy",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/Pixy%20(by%20Littlesneez).7z",
-        "hash": "null",
         "id": "pixy_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/KlawShout%20(by%20Klawifiantix).rar",
+                "fileName": "KlawShout (by Klawifiantix).rar",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Klawifiantix"
+            "klawifiantix"
         ],
         "description": "High-energy combat-focused WSO personality voice pack.",
         "displayName": "KlawShout",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/KlawShout%20(by%20Klawifiantix).rar",
-        "hash": "null",
         "id": "klawshout_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/HighfleetRu%20(by%20giorno0075).7z",
+                "fileName": "HighfleetRu (by giorno0075).7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
             "giorno0075"
         ],
         "description": "Russian-style combat radio chatter voice pack.",
         "displayName": "Highfleet RU",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/HighfleetRu%20(by%20giorno0075).7z",
-        "hash": "null",
         "id": "highfleet_ru_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/Galaxy2%20(by%20Nikkorap).7z",
+                "fileName": "Galaxy2 (by Nikkorap).7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Voice Pack",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Expanded AWACS Galaxy dialogue voice pack.",
         "displayName": "Galaxy 2",
-        "downloadUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/Galaxy2%20(by%20Nikkorap).7z",
-        "hash": "null",
         "id": "galaxy2_voice",
         "infoUrl": "https://github.com/nikkorap/NO-WSO-Yappinator/raw/master/VoicePacks/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Voice Pack",
-            "QoL"
-        ],
-        "type": "Addon",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/TYKUHN2/AtomicFramework/releases/download/v0.1.0/AtomicFramework.7z",
+                "fileName": "AtomicFramework.7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:e0779ab74b7340770189c95fd8b761d4203b73e54a77f258527b50be47c3ee52",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "0.1.0"
+            }
+        ],
         "authors": [
-            "TYKUHN2"
+            "tykuhn2"
         ],
         "description": "AtomicFramework is a framework and utility library for developing mods for the game Nuclear Option.",
         "displayName": "Atomic Framework",
-        "downloadUrl": "https://github.com/TYKUHN2/AtomicFramework/releases/download/v0.1.0/AtomicFramework.7z",
-        "hash": "sha256:e0779ab74b7340770189c95fd8b761d4203b73e54a77f258527b50be47c3ee52",
         "id": "AtomicFramework",
         "infoUrl": "https://github.com/TYKUHN2/AtomicFramework",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "Utility"
-        ],
-        "type": "Plugin",
-        "version": "0.1.0"
+            "mod",
+            "utility"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/TYKUHN2/NuclearVOIP/releases/download/v0.4.0/NuclearVOIP.7z",
+                "fileName": "NuclearVOIP.7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:439054ec3a730bdc22cf670ceaea424044b24ec6d095148fef5729dc95dd0615",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "0.4.0"
+            }
+        ],
         "authors": [
-            "TYKUHN2"
+            "tykuhn2"
         ],
         "description": "Voice Chat for Nuclear Option.",
         "displayName": "Nuclear VOIP",
-        "downloadUrl": "https://github.com/TYKUHN2/NuclearVOIP/releases/download/v0.4.0/NuclearVOIP.7z",
-        "hash": "sha256:439054ec3a730bdc22cf670ceaea424044b24ec6d095148fef5729dc95dd0615",
         "id": "NuclearVOIP",
         "infoUrl": "https://github.com/TYKUHN2/NuclearVOIP/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "0.4.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/GBry/NuclearOption-AirDataAnnouncer/releases/download/Update-1-PullUp/Unzip.to.BepInEx.Plugins.zip",
+                "fileName": "Unzip.to.BepInEx.Plugins.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:e2fd1e734e7ab2a26cbac43484598bf048bba4c47565fdb4f2c03e2268f982db",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "GBry"
+            "gbry"
         ],
         "description": "Nuclear Option Voice idfk?!",
         "displayName": "Air Data Announcer",
-        "downloadUrl": "https://github.com/GBry/NuclearOption-AirDataAnnouncer/releases/download/Update-1-PullUp/Unzip.to.BepInEx.Plugins.zip",
-        "hash": "sha256:e2fd1e734e7ab2a26cbac43484598bf048bba4c47565fdb4f2c03e2268f982db",
         "id": "NuclearOption-AirDataAnnouncer",
         "infoUrl": "https://github.com/GBry/NuclearOption-AirDataAnnouncer/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/OverlordMIke/Nuclear-Option-Mod-ThirdPersonHUD/releases/download/v1.1.1/ThirdPersonHUD_v1_1_1.zip",
+                "fileName": "ThirdPersonHUD_v1_1_1.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:a5e9a753cdf74a50256226a56d0f97e6ef86de097fbd4acb03fb954f5435ba49",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.1"
+            }
+        ],
         "authors": [
-            "OverlordMIke"
+            "overlordmike"
         ],
         "description": "A client-side mod that improves the Orbit camera experience in Nuclear Option.",
         "displayName": "Orbit HUD for Nuclear Option",
-        "downloadUrl": "https://github.com/OverlordMIke/Nuclear-Option-Mod-ThirdPersonHUD/releases/download/v1.1.1/ThirdPersonHUD_v1_1_1.zip",
-        "hash": "sha256:a5e9a753cdf74a50256226a56d0f97e6ef86de097fbd4acb03fb954f5435ba49",
         "id": "Nuclear-Option-Mod-ThirdPersonHUD",
         "infoUrl": "https://github.com/OverlordMIke/Nuclear-Option-Mod-ThirdPersonHUD",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
-        "authors": [
-            "JUSTJ7780"
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/JUSTJ7780/Weapon-utility-mod/releases/download/1.1/Op.Weapons.1.1.7z",
+                "fileName": "Op.Weapons.1.1.7z",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:d7adf86f951911a6dd54248545b545715b1ee6054b5ccdc32f1ea09fcfe8e644",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.7"
+            }
         ],
-        "description": " it allows you to affect missile speeds increasing them to crazy fast speeds I plan to add other things like instant turning and eventually payload so bigger booms basically please let me know what you think.",
+        "authors": [
+            "justj7780"
+        ],
+        "description": "it allows you to affect missile speeds increasing them to crazy fast speeds I plan to add other things like instant turning and eventually payload so bigger booms basically please let me know what you think.",
         "displayName": "Weapon Utility",
-        "downloadUrl": "https://github.com/JUSTJ7780/Weapon-utility-mod/releases/download/1.1/Op.Weapons.1.1.7z",
-        "hash": "sha256:d7adf86f951911a6dd54248545b545715b1ee6054b5ccdc32f1ea09fcfe8e644",
         "id": "Weapon-utility-mod",
         "infoUrl": "https://github.com/JUSTJ7780/Weapon-utility-mod/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.7"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/Ol1vver/bepinex-soundmod/releases/download/v1.0.0/bepinex_soundmod.dll",
+                "fileName": "bepinex_soundmod.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Ol1vver"
+            "ol1vver"
         ],
         "description": "This mod is similar to yappinator except this can affect things such as radar an ir locking sounds even the sounds generated by weapons ( a-10 brrrrrrt is being checked )",
         "displayName": "Audio Switcher",
-        "downloadUrl": "https://github.com/Ol1vver/bepinex-soundmod/releases/download/v1.0.0/bepinex_soundmod.dll",
-        "hash": "null",
         "id": "bepinex-soundmod",
         "infoUrl": "https://github.com/Ol1vver/bepinex-soundmod",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/muji2498/YawOnMouse/releases/download/1.0.0/YawOnMouse.dll",
+                "fileName": "YawOnMouse.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
             "muji2498"
         ],
         "description": "QoL mod which should benefit colourblind players, plus the ability to toggle player names on and off. (Player names appear above the aircraft triangle symbol in online matches, for better situational awareness of who is who.)",
         "displayName": "Yaw On Mouse",
-        "downloadUrl": "https://github.com/muji2498/YawOnMouse/releases/download/1.0.0/YawOnMouse.dll",
-        "hash": "null",
         "id": "YawOnMouse",
         "infoUrl": "https://github.com/muji2498/YawOnMouse/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NOLoadoutPresets/releases/download/1.0.0/LoadoutPresets_1.0.0.dll",
+                "fileName": "LoadoutPresets_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:bfbbe054aa1dd7a567f2e5f7fabdba1cee8038aeeb864d91cd51c3a9c3b23c77",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "A BepInEx 5 mono mod for the game Nuclear Option. Adds a new Window to the loadout select menu that allows you to easily select and customize preset loadouts, saving the current Livery, Weapons selection, and fuel level.",
         "displayName": "NO Loadout Presets",
-        "downloadUrl": "https://github.com/nikkorap/NOLoadoutPresets/releases/download/1.0.0/LoadoutPresets_1.0.0.dll",
-        "hash": "sha256:bfbbe054aa1dd7a567f2e5f7fabdba1cee8038aeeb864d91cd51c3a9c3b23c77",
         "id": "NOLoadoutPresets",
         "infoUrl": "https://github.com/nikkorap/NOLoadoutPresets/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/downloadpizza/LaserRocketFix/releases/download/v1.0.0/LaserRocketFix.dll",
+                "fileName": "LaserRocketFix.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:4a4492f518e00e9b5e07fb627674f752fe6ba5dd77b592958ace0ede37920f49",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
             "downloadpizza"
         ],
         "description": "This mod disables firing laser guided rockets at unlased targets. So for example chicane will only ever fire at a maximum of 4 targets, and only at those that it actually has line of sight to.",
         "displayName": "Laser Guided Rockets Fix",
-        "downloadUrl": "https://github.com/downloadpizza/LaserRocketFix/releases/download/v1.0.0/LaserRocketFix.dll",
-        "hash": "sha256:4a4492f518e00e9b5e07fb627674f752fe6ba5dd77b592958ace0ede37920f49",
         "id": "LaserRocketFix",
         "infoUrl": "https://github.com/downloadpizza/LaserRocketFix/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "Utility"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "mod",
+            "utility"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/MaxWasUnavailable/Nuclei/releases/download/v1.3.3/MaxWasUnavailable.Nuclei.zip",
+                "fileName": "MaxWasUnavailable.Nuclei.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.3.3"
+            }
+        ],
         "authors": [
-            "MaxWasUnavailable"
+            "maxwasunavailable"
         ],
         "description": "Nuclei is a dedicated server solution for Nuclear Option. It is designed to offer a flexible, easy-to-use, and easy-to-modify server solution. It is built on top of the BepInEx modding framework, and hence requires a BepInEx installation to run.",
         "displayName": "Nuclei",
-        "downloadUrl": "https://github.com/MaxWasUnavailable/Nuclei/releases/download/v1.3.3/MaxWasUnavailable.Nuclei.zip",
-        "hash": "null",
         "id": "NONuclei",
         "infoUrl": "https://github.com/MaxWasUnavailable/Nuclei/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.3.3"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/clumzy/NO_Tactitools/releases/download/0.6.0.2/NOTT_PR_0.6.0.2.zip",
+                "fileName": "NOTT_PR_0.6.0.2.zip",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:51005cf2d167a43c1fa613e5cfc85d43471789e2291ed57af34645ff9ee8adad",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "0.6.0.2"
+            }
+        ],
         "authors": [
             "clumzy"
         ],
         "description": "Nuclear Option Tactical Tools is an immersion and QoL focused gameplay mod. \nThe mod aims to enhance cockpit immersion and reduce repetitive UI actions without automating core combat mechanics, with a heavy focus on ensuring non-mod users are not at a disadvantage and a vanilla feel for the new functionalities. Every component of the mod is togglable, and you can use your keyboard and HOTAS to interact with some of the new functionalities.",
         "displayName": "NO Tactical Tools",
-        "downloadUrl": "https://github.com/clumzy/NO_Tactitools/releases/download/0.6.0.2/NOTT_PR_0.6.0.2.zip",
-        "hash": "sha256:51005cf2d167a43c1fa613e5cfc85d43471789e2291ed57af34645ff9ee8adad",
         "id": "NO_Tactitools",
         "infoUrl": "https://github.com/clumzy/NO_Tactitools",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "0.6.0.2"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/Combat787/CombatsAdditions/raw/refs/heads/master/modBuilds/IndependentOption.dll",
+                "fileName": "IndependentOption.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Combat787"
+            "combat787"
         ],
         "description": "Makes every hardpoint independent.",
         "displayName": "Independent Option",
-        "downloadUrl": "https://github.com/Combat787/CombatsAdditions/raw/refs/heads/master/modBuilds/IndependentOption.dll",
-        "hash": "null",
         "id": "Independent_Option",
         "infoUrl": "https://github.com/Combat787/CombatsAdditions/raw/refs/heads/master/modBuilds/",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/Combat787/CombatsAdditions/raw/refs/heads/master/modBuilds/QOLFreeLoadSpeedIncrease.dll",
+                "fileName": "QOLFreeLoadSpeedIncrease.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Combat787"
+            "combat787"
         ],
         "description": "Increases the Speed of the load for the FAMOUS qol mod.",
         "displayName": "Free Load Speed",
-        "downloadUrl": "https://github.com/Combat787/CombatsAdditions/raw/refs/heads/master/modBuilds/QOLFreeLoadSpeedIncrease.dll",
-        "hash": "null",
         "id": "QOLFreeLoadSpeedIncrease",
         "infoUrl": "https://github.com/Combat787/CombatsAdditions/tree/refs/heads/master/modBuilds",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/Combat787/CombatsAdditions/raw/master/modBuilds/WeaponsFramework.dll",
+                "fileName": "WeaponsFramework.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Combat787"
+            "combat787"
         ],
         "description": "My trying to learn adding new missiles currently (and in the foreseeable future) adds only the R9 as a mount to some aircraft.",
         "displayName": "Weapons Framework",
-        "downloadUrl": "https://github.com/Combat787/CombatsAdditions/raw/master/modBuilds/WeaponsFramework.dll",
-        "hash": "null",
         "id": "Weapons_Framework",
         "infoUrl": "https://github.com/Combat787/CombatsAdditions/tree/refs/heads/master/modBuilds",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/Combat787/CombatsAdditions/blob/refs/heads/master/modBuilds/GravityOption.dll",
+                "fileName": "GravityOption.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Combat787"
+            "combat787"
         ],
         "description": "ever wanted to set the gravity to the one of the moon or of the sun here you go. pros: its funny, cons: idk dont use if it has cons for you lol, only changes the physics gravity there are some things that have gravity inbuilt as a set magic number like flares",
         "displayName": "Gravity Option",
-        "downloadUrl": "https://github.com/Combat787/CombatsAdditions/blob/refs/heads/master/modBuilds/GravityOption.dll",
-        "hash": "null",
         "id": "gravity_option",
         "infoUrl": "https://github.com/Combat787/CombatsAdditions/tree/refs/heads/master/modBuilds",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/EditorPlus/releases/download/1.4.2/com.nikkorap.EditorPlus_1.4.2.dll",
+                "fileName": "com.nikkorap.EditorPlus_1.4.2.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "sha256:494c3d46c41a66180d8b1d49d94b02f6a2db8ea707fd6da10940e35a2382bc69",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.4.2"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "A bepinex mod to enhance the Nuclear Option mission editor experience.",
         "displayName": "Editor Plus",
-        "downloadUrl": "https://github.com/nikkorap/EditorPlus/releases/download/1.4.2/com.nikkorap.EditorPlus_1.4.2.dll",
-        "hash": "sha256:494c3d46c41a66180d8b1d49d94b02f6a2db8ea707fd6da10940e35a2382bc69",
         "id": "EditorPlus",
         "infoUrl": "https://github.com/nikkorap/EditorPlus",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.4.2"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://drive.usercontent.google.com/download?id=1f11zrK4RYhpMroGTHvsbE4tAgwljC0lL&export=download&authuser=0",
+                "fileName": "download",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.5.1"
+            }
+        ],
         "authors": [
-            "Hellcat92"
+            "hellcat92"
         ],
         "description": "A bepinex mod to enhance the Nuclear Option mission editor experience.",
         "displayName": "Vanilla Icons PLUS",
-        "downloadUrl": "https://drive.usercontent.google.com/download?id=1f11zrK4RYhpMroGTHvsbE4tAgwljC0lL&export=download&authuser=0",
-        "hash": "null",
         "id": "Vanilla_Icons_PLUS",
         "infoUrl": "https://drive.google.com/file/d/1f11zrK4RYhpMroGTHvsbE4tAgwljC0lL/view",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.5.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://drive.google.com/file/d/1jdMJlVjlW5lRhvX1OfnrBg9EC4-x5Pa6/view?usp=drive_link;https://drive.google.com/file/d/1EnEtGE159a2dOjcYeMN9YW8O2hru4zUb/view?usp=drive_link",
+                "fileName": "view",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.5.1"
+            }
+        ],
         "authors": [
-            "MinecrackTyler"
+            "minecracktyler"
         ],
         "description": "Comically oversized and overpowered dynamo™ The orbital strike thing (it doesn't work I don't think currently) hexhound, 20kt.",
         "displayName": "MinecrackTyler's Cursed Creations",
-        "downloadUrl": "https://drive.google.com/file/d/1jdMJlVjlW5lRhvX1OfnrBg9EC4-x5Pa6/view?usp=drive_link;https://drive.google.com/file/d/1EnEtGE159a2dOjcYeMN9YW8O2hru4zUb/view?usp=drive_link",
-        "hash": "null",
         "id": "minecrackTyler_cursed_creations",
         "infoUrl": "https://drive.google.com/drive/folders/1o62qbSzUM_CGuJ44CQjlMIQxjMsppXuo?usp=sharing",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.5.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/Host%2BClient/UnrestrictedWeapons/1.4.0/com.nikkorap.UnrestrictedWeapons_1.4.0.dll",
+                "fileName": "com.nikkorap.UnrestrictedWeapons_1.4.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.4.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Any weapon, any pylon, no problems, if your airframe can handle it. Alternatively you can just edit the mission .json file to force any loadout to any aircraft, no mod required.",
         "displayName": "Unrestricted Weapons",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/Host%2BClient/UnrestrictedWeapons/1.4.0/com.nikkorap.UnrestrictedWeapons_1.4.0.dll",
-        "hash": "null",
         "id": "unrestricted_weapons",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/Host%2BClient/UnrestrictedWeapons",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.4.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/DetailedClimbRate/1.1.1/com.nikkorap.DetailedClimbRate_1.1.1.dll",
+                "fileName": "com.nikkorap.DetailedClimbRate_1.1.1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.1"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Is seaskimming too ambigious? then grab this mod to turn 0m/s into 0.00m/s (or feet if you're into that)",
         "displayName": "Detailed Climb Rate",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/DetailedClimbRate/1.1.1/com.nikkorap.DetailedClimbRate_1.1.1.dll",
-        "hash": "null",
         "id": "detailedclimbrate",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/DetailedClimbRate",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/DropDownScroll/1.1.1/com.nikkorap.DropDownScroll_1.1.1.dll",
+                "fileName": "com.nikkorap.DropDownScroll_1.1.1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.1"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Cant be bothered to click each hardpoint and weapon each time? just hover over the button and scroll your wheel to change the weapon!",
         "displayName": "Scrolling weapon selection",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/DropDownScroll/1.1.1/com.nikkorap.DropDownScroll_1.1.1.dll",
-        "hash": "null",
         "id": "dropdwnscroll",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/DropDownScroll",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/Persistent%20Loadouts/1.2.0/com.nikkorap.LoadoutFavourites_1.2.0.dll",
+                "fileName": "com.nikkorap.LoadoutFavourites_1.2.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.2.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Annoyed that you have to reconfigure all your aircraft each time you restart the game or mission? Then this mod is for you! It makes sure the game always remembers the last loadout you configured.",
         "displayName": "Persistent Loadouts",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/Persistent%20Loadouts/1.2.0/com.nikkorap.LoadoutFavourites_1.2.0.dll",
-        "hash": "null",
         "id": "persistent_loadouts",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/Persistent%20Loadoutse",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.2.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/pinkenemies/1.0.6/com.nikkorap.pinkenemies_1.0.6.dll",
+                "fileName": "com.nikkorap.pinkenemies_1.0.6.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.6"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Cant easily differentiate the enemies marked in red and the 'enemies' marked in blue? then grab this mod to make the enemies from red to pink, or any color you want!",
         "displayName": "Pink Enemies",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/pinkenemies/1.0.6/com.nikkorap.pinkenemies_1.0.6.dll",
-        "hash": "null",
         "id": "pink_enemies",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/DetailedClimbRate",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.6"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/racetimer/1.2.0/com.nikkorap.racetimer_1.2.0.dll",
+                "fileName": "com.nikkorap.racetimer_1.2.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.2.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Want to see exactly how fast or slow you are? then take this mod to see the exact splits, down to the milliseconds. This mod is fully reliant on mission messages, the first message sent is used as the start, each message after that is used as a checkpoint. this mod creates a .txt file next to the .dll, which contains your best times in each mission.",
         "displayName": "Race Timer",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/racetimer/1.2.0/com.nikkorap.racetimer_1.2.0.dll",
-        "hash": "null",
         "id": "race_timer",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/racetimer",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.2.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/truefactioncolours/1.0.1/com.nikkorap.truefactioncolours_1.0.1.dll",
+                "fileName": "com.nikkorap.truefactioncolours_1.0.1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.1"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "If you prefer the factions to always have their faction colours (purple BDF and orange PALA), even after you pick a side, then choose this!",
         "displayName": "True Faction Colours",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/truefactioncolours/1.0.1/com.nikkorap.truefactioncolours_1.0.1.dll",
-        "hash": "null",
         "id": "true_faction_colours",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/truefactioncolours",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/ttsplus/1.0.0/com.nikkorap.ttsplus_1.0.0.dll",
+                "fileName": "com.nikkorap.ttsplus_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "a simple mod that also reads out the messages sent by the mission.",
         "displayName": "TTS Plus",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/main/clientside%2C%20QOL%2C%20accessibility/ttsplus/1.0.0/com.nikkorap.ttsplus_1.0.0.dll",
-        "hash": "null",
         "id": "ttsplus",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/main/clientside%2C%20QOL%2C%20accessibility/ttsplus",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/JUSTJ7780/NO-QOL/blob/main/RWR%20eta%20mk2-beta.dll",
+                "fileName": "RWR eta mk2-beta.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "JUSTJ7780"
+            "justj7780"
         ],
         "description": "Changes RWR warning sound based on different situations.",
         "displayName": "Smart RWR",
-        "downloadUrl": "https://github.com/JUSTJ7780/NO-QOL/blob/main/RWR%20eta%20mk2-beta.dll",
-        "hash": "null",
         "id": "smart_rwr",
         "infoUrl": "https://github.com/JUSTJ7780/NO-QOL",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/JUSTJ7780/NO-QOL/blob/main/dirt%20be%20gone.dll",
+                "fileName": "dirt be gone.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "JUSTJ7780"
+            "justj7780"
         ],
         "description": "Removed dirt from the game.",
         "displayName": "Smart RWR",
-        "downloadUrl": "https://github.com/JUSTJ7780/NO-QOL/blob/main/dirt%20be%20gone.dll",
-        "hash": "null",
         "id": "dirt_be_gone",
         "infoUrl": "https://github.com/JUSTJ7780/NO-QOL",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://drive.usercontent.google.com/download?id=1Wnl45HxvQqQ80agfq-EYBlymSiiVC0ad&export=download&authuser=0",
+                "fileName": "download",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "2.0.2"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "The FQ-106 Kestrel mod adds the Kestrel, a light combat drone with superb kinematics and Nuclear Option's first fully standalone custom aircraft. It features a custom model with unique flight performance and destruction, a custom MFD and damage display, 7 liveries, no G-loc, and self-destruction when the eject key is pressed.",
         "displayName": "FQ-106 Kestrel",
-        "downloadUrl": "https://drive.usercontent.google.com/download?id=1Wnl45HxvQqQ80agfq-EYBlymSiiVC0ad&export=download&authuser=0",
-        "hash": "null",
         "id": "fq106",
         "infoUrl": "https://drive.google.com/file/d/1Wnl45HxvQqQ80agfq-EYBlymSiiVC0ad/view?usp=sharing",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "2.0.2"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1383885438288400395/1467654626936619050/qol_1.1.6.2b1.dll?ex=69827ce2&is=69812b62&hm=9a2aea78ad2c96b8acd9c56064c0f6f17603001956192ffdcf12c1674d81f706&",
+                "fileName": "qol_1.1.6.2b1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.6.2b1"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "A major overhaul mod for Nuclear Option. QoL adds custom weapons, units, features, plus hundreds of fixes and parity adjustments.",
         "displayName": "NO Quality of Life",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1383885438288400395/1467654626936619050/qol_1.1.6.2b1.dll?ex=69827ce2&is=69812b62&hm=9a2aea78ad2c96b8acd9c56064c0f6f17603001956192ffdcf12c1674d81f706&",
-        "hash": "null",
         "id": "no_qol",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1383885438288400395",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.6.2b1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/refs/heads/main/archive/Host%20only/Limited%20Lives/1.3.0/com.nikkorap.OneLifeTest_1.3.0.dll",
+                "fileName": "com.nikkorap.OneLifeTest_1.3.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.3.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Dont want players in your server going on suicide runs? then grab this! this mod heavily encourages returning to base safely.",
         "displayName": "Limited Lives",
-        "downloadUrl": "https://github.com/nikkorap/NuclearMods/blob/refs/heads/main/archive/Host%20only/Limited%20Lives/1.3.0/com.nikkorap.OneLifeTest_1.3.0.dll",
-        "hash": "null",
         "id": "limited_lives",
         "infoUrl": "https://github.com/nikkorap/NuclearMods/tree/refs/heads/main/archive/Host%20only/Limited%20Lives",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.3.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1436134603277602827/1436134604414124283/betterpip_1.0.0.dll?ex=69813293&is=697fe113&hm=8269be114a18a4ddd263c30436e5c8fd992c46e6a25c87318b3d29e4bb6bf8be&",
+                "fileName": "betterpip_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Simple HUD modification to improve gunplay.",
         "displayName": "Better PIP",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1436134603277602827/1436134604414124283/betterpip_1.0.0.dll?ex=69813293&is=697fe113&hm=8269be114a18a4ddd263c30436e5c8fd992c46e6a25c87318b3d29e4bb6bf8be&",
-        "hash": "null",
         "id": "better_pip",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1436134603277602827/1436134603277602827",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1400848413578236037/1403118590776971374/com.nikkorap.MorePylons_1.1.0.dll?ex=6981b744&is=698065c4&hm=61189f0ac1bf2bd3da64ca5b5011a2fe72e5eefad14d1c5a3639d8919baa30fd&",
+                "fileName": "com.nikkorap.MorePylons_1.1.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Just a few more pylons on various aircraft",
         "displayName": "More Pylons",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1400848413578236037/1403118590776971374/com.nikkorap.MorePylons_1.1.0.dll?ex=6981b744&is=698065c4&hm=61189f0ac1bf2bd3da64ca5b5011a2fe72e5eefad14d1c5a3639d8919baa30fd&",
-        "hash": "null",
         "id": "more_pylons",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1400848413578236037",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1399640571869528175/1399640571999555684/com.nikkorap.FireControl_1.0.0.dll?ex=6981965c&is=698044dc&hm=e4ed4c755212a3ac9d029c6553424cba99fde5887c02c5e686543ae4c9162a02&",
+                "fileName": "com.nikkorap.FireControl_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "When firing at a target or multiple targets, each missile will first check if it's a valid target for itself.",
         "displayName": "Smart Munitions Release",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1399640571869528175/1399640571999555684/com.nikkorap.FireControl_1.0.0.dll?ex=6981965c&is=698044dc&hm=e4ed4c755212a3ac9d029c6553424cba99fde5887c02c5e686543ae4c9162a02&",
-        "hash": "null",
         "id": "smart_munitions_release",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1400848413578236037",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1404230261239185459/1404455306356064297/com.nikkorap.airburstchicane_1.1.0.dll?ex=69829fae&is=69814e2e&hm=9b5e629e0267c6affe306b424c013505678a9f3e195fed150426712fc6e49532&",
+                "fileName": "com.nikkorap.airburstchicane_1.1.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.1.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "The chicane is evil, now doubly so. Gives the Chicane's chin turret airburst ammo, allowing you to intercept missiles (the target leading seems to bug out half the time and the turret attempts to lead in the opposite direction lol, if that happens then retarget the missile). count your blessings i didnt teach the AI to use it.",
         "displayName": "Airburst Chicane",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1404230261239185459/1404455306356064297/com.nikkorap.airburstchicane_1.1.0.dll?ex=69829fae&is=69814e2e&hm=9b5e629e0267c6affe306b424c013505678a9f3e195fed150426712fc6e49532&",
-        "hash": "null",
         "id": "airburst_chicane",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1404230261239185459",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.1.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1407468199951470714/1422368751931621496/com.nikkorap.blueprinter_1.4.4.dll?ex=698288a0&is=69813720&hm=5e7c64e1f7a4ae8f046538d2437b305fb3b70f019b152f1f48015c56652139db&",
+                "fileName": "com.nikkorap.blueprinter_1.4.4.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.4.4"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "A framework mod to 'easily' make new vehicles, weapons, ships, buildings, or even aircraft in the unity editor, and have them behave as any normal unit., The editor features a capability to use the proper in-game components and scriptableobjects, and a placeholder system if you want to use the game assets.",
         "displayName": "Blueprinter",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1407468199951470714/1422368751931621496/com.nikkorap.blueprinter_1.4.4.dll?ex=698288a0&is=69813720&hm=5e7c64e1f7a4ae8f046538d2437b305fb3b70f019b152f1f48015c56652139db&",
-        "hash": "null",
         "id": "blueprinter",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1407468199951470714",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.4.4"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://drive.google.com/file/d/1k6PxWAKaEyE6vSUAwsXUVMyf4ARkmAKj/view?usp=drive_link",
+                "fileName": "3rdpersoncam_1.0.1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.1"
+            },
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://drive.google.com/file/d/11toJOFjSDPl5xTaeNJl8wWHdENwwtT9d/view?usp=drive_link",
+                "fileName": "3rdpersoncam_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Makes the HUD and HMD appear while in orbit camera.",
         "displayName": "3rd Person Camera",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1403140975739797664/1411179934235365437/3rdpersoncam_1.0.1.dll?ex=6982b2ba&is=6981613a&hm=03dc69f6713f588468afeff2e97d09643a367a8f466d604dfd60a466bb435ecb&",
-        "hash": "null",
         "id": "third_person_camera",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1403140975739797664",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.1"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1408496191611600907/1408496191955664977/freecam_1.0.0.dll?ex=6982d28c&is=6981810c&hm=3b7946307ca6b411e28ce18ed85dd3d5cfe2724c75bec88c642226919536f31d&",
+                "fileName": "freecam_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "Press F6 while flying to enter freecam.",
         "displayName": "Freecam During Flight",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1408496191611600907/1408496191955664977/freecam_1.0.0.dll?ex=6982d28c&is=6981810c&hm=3b7946307ca6b411e28ce18ed85dd3d5cfe2724c75bec88c642226919536f31d&",
-        "hash": "null",
         "id": "freecam_during_flight",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1408496191611600907",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1399537195475406939/1403140351350280275/colorblindmap_1.0.0.dll?ex=6981cb88&is=69807a08&hm=266fdbe9aff10d75e5f40bfdf471b969727d256f9a904a19836c46a31007b417&",
+                "fileName": "colorblindmap_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Simple standalone mod that makes the map easier to read for those with colorblindness. Mod by request.",
         "displayName": "Colorblind Map",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1399537195475406939/1403140351350280275/colorblindmap_1.0.0.dll?ex=6981cb88&is=69807a08&hm=266fdbe9aff10d75e5f40bfdf471b969727d256f9a904a19836c46a31007b417&",
-        "hash": "null",
         "id": "colorblind_map",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1399537195475406939",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398348285105672343/1398348285768368258/vls_boosters_1.0.0.dll?ex=6982d193&is=69818013&hm=ed7b68e8aad19de3a9cb9d3c3c9cc719c8ff90db479ee81919ae31c04161aac3&",
+                "fileName": "vls_boosters_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Forces VLS boosters to spawn despite being launched from an aircraft. Affects AGM-98 and AShM-300; QOL 1.0.6 and above have this built-in.",
         "displayName": "VLS Boosters",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398348285105672343/1398348285768368258/vls_boosters_1.0.0.dll?ex=6982d193&is=69818013&hm=ed7b68e8aad19de3a9cb9d3c3c9cc719c8ff90db479ee81919ae31c04161aac3&",
-        "hash": "null",
         "id": "vls_boosters",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398348285105672343",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398348155803799572/1398348155963310230/visible_copilots_1.0.0.dll?ex=6982d174&is=69817ff4&hm=54b4272403810303e52fbef0dba63ca980bfd531e1cc75bdecee2f12a30940a4&",
+                "fileName": "visible_copilots_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Shows all copilots and crew while in first-person mode. Shows pilot as well during loadout selection; QOL 1.0.6 and above have this built-in.",
         "displayName": "Visible Copilots",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398348155803799572/1398348155963310230/visible_copilots_1.0.0.dll?ex=6982d174&is=69817ff4&hm=54b4272403810303e52fbef0dba63ca980bfd531e1cc75bdecee2f12a30940a4&",
-        "hash": "null",
         "id": "visible_copilots",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398348155803799572",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398347868846428370/1398347869311864882/stronger_civilians_1.0.0.dll?ex=6982d130&is=69817fb0&hm=442949397f262c13a6cd56b3fcf2371e11524da40273a1dbb7b7f2add7093c01&",
+                "fileName": "stronger_civilians_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Significantly increases the survivability of civilian map buildings so they no longer collapse from a single missile; QOL 1.0.6 and above have this built-in.",
         "displayName": "Stronger Civilian Buildings",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398347868846428370/1398347869311864882/stronger_civilians_1.0.0.dll?ex=6982d130&is=69817fb0&hm=442949397f262c13a6cd56b3fcf2371e11524da40273a1dbb7b7f2add7093c01&",
-        "hash": "null",
         "id": "stronger_civilian_buildings",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398347868846428370",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398347741171814553/1398347741360296179/nojitter_jamming_1.0.0.dll?ex=6982d111&is=69817f91&hm=6fee3ed11a843457e596259a73ea83f51bda1b5ed561daf3da90c78584d842d9&",
+                "fileName": "nojitter_jamming_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Disables jittering effect when being jammed, and keeps friendlies visible; QOL 1.1.0 and above have this built-in.",
         "displayName": "NoJitter Jamming",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398347741171814553/1398347741360296179/nojitter_jamming_1.0.0.dll?ex=6982d111&is=69817f91&hm=6fee3ed11a843457e596259a73ea83f51bda1b5ed561daf3da90c78584d842d9&",
-        "hash": "null",
         "id": "no_jitter_jamming",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398347741171814553",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398347644681719848/1398347644824195242/nighttime_navlights_1.0.0.dll?ex=6982d0fa&is=69817f7a&hm=2e4ed984b53147378744598bdd9cc1a220cc95a7d01e842fe58dd909dbb09886&",
+                "fileName": "nighttime_navlights_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Forces all aircraft lights to stay on after raising gear if the time is between 1800 and 0600; QOL 1.0.6 and above have this built-in.",
         "displayName": "Night Time Navlights",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398347644681719848/1398347644824195242/nighttime_navlights_1.0.0.dll?ex=6982d0fa&is=69817f7a&hm=2e4ed984b53147378744598bdd9cc1a220cc95a7d01e842fe58dd909dbb09886&",
-        "hash": "null",
         "id": "nighttime_navlights",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398347644681719848",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398347511445323866/1398347511701307463/lively_killfeed_1.0.0.dll?ex=6982d0da&is=69817f5a&hm=af48f829af83bb4d17d3400b30f4b0e613f673ab563f145a9ffad83840169e85&",
+                "fileName": "lively_killfeed_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Adds a variety of new random verbs to killfeed messages. Includes rare entries. QOL 1.0.5 and above have this built-in.",
         "displayName": "Lively Killfeed",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398347511445323866/1398347511701307463/lively_killfeed_1.0.0.dll?ex=6982d0da&is=69817f5a&hm=af48f829af83bb4d17d3400b30f4b0e613f673ab563f145a9ffad83840169e85&",
-        "hash": "null",
         "id": "lively_killfeed",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398347511445323866",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1398347359095754793/1398347359779557496/better_altitude_1.0.0.dll?ex=6982d0b6&is=69817f36&hm=a91f38413d8bb98480f269381260aa8c6e2d458be67a5c4cee20f1cf40e25f02&",
+                "fileName": "better_altitude_1.0.0.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.0"
+            }
+        ],
         "authors": [
-            "Offiry"
+            "offiry"
         ],
         "description": "Changes the HUD right margin numbers to show decimals when numbers are low, and adds a new dynamic RCS reading. QOL 1.1.0 and above have this built-in.",
         "displayName": "Better Altitude",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1398347359095754793/1398347359779557496/better_altitude_1.0.0.dll?ex=6982d0b6&is=69817f36&hm=a91f38413d8bb98480f269381260aa8c6e2d458be67a5c4cee20f1cf40e25f02&",
-        "hash": "null",
         "id": "better_altitude",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1398347359095754793",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.0"
+            "QoL",
+            "mod"
+        ]
     },
     {
+        "artifacts": [
+            {
+                "category": "release",
+                "conflicts": [],
+                "depenencies": [],
+                "downloadUrl": "https://cdn.discordapp.com/attachments/1397321933862731859/1397653834511421581/com.nikkorap.pipfixer_1.0.1.dll?ex=69819c51&is=69804ad1&hm=a7e6b65c44feab3c4379b9de2afa429dbe69b4d26a3cfbf12ede637705bd1df1&",
+                "fileName": "com.nikkorap.pipfixer_1.0.1.dll",
+                "fileSizeBytes": 0,
+                "gameVersion": "0.32",
+                "hash": "null",
+                "thumbnailUrl": "null",
+                "type": "Plugin",
+                "version": "1.0.1"
+            }
+        ],
         "authors": [
-            "Nikkorap"
+            "nikkorap"
         ],
         "description": "This mod tweaks the gun pip math a little to hopefully be more accurate, especially with lateral movement.",
         "displayName": "Gun PIP Fix",
-        "downloadUrl": "https://cdn.discordapp.com/attachments/1397321933862731859/1397653834511421581/com.nikkorap.pipfixer_1.0.1.dll?ex=69819c51&is=69804ad1&hm=a7e6b65c44feab3c4379b9de2afa429dbe69b4d26a3cfbf12ede637705bd1df1&",
-        "hash": "null",
         "id": "gun_pip_fix",
         "infoUrl": "https://discord.com/channels/1303878245942431765/1397321933862731859",
+        "previewImage": "null",
+        "screenshots": [],
         "tags": [
-            "Mod",
-            "QoL"
-        ],
-        "type": "Plugin",
-        "version": "1.0.1"
+            "QoL",
+            "mod"
+        ]
     }
 ]
