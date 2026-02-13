@@ -44,9 +44,9 @@ public partial class MainViewModel
 
     public Dictionary<string, string> ManifestSources { get; } = new()
     {
-        { "Stable Source", "https://gist.githubusercontent.com/NaghDiefallah/82544b5e011d78924b0ff7678e4180aa/raw/NOModsPrimary" },
+        { "Stable Source", "https://raw.githubusercontent.com/NaghDiefallah/Yellowcake/refs/heads/main/Manifests/Stable.json" },
         { "Community Source", "https://kopterbuzz.github.io/NOMNOM/manifest/manifest.json" },
-        { "Development Source", "https://gist.githubusercontent.com/NaghDiefallah/82544b5e011d78924b0ff7678e4180aa/raw/NOModsTesting" }
+        { "Development Source", "https://raw.githubusercontent.com/NaghDiefallah/Yellowcake/refs/heads/main/Manifests/Development.json" }
     };
 
     partial void OnIsSettingsOpenChanged(bool value) 

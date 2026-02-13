@@ -268,7 +268,11 @@ Yellowcake includes multiple themes:
 
 ### Building from Source
 ```
-git clone https://github.com/NaghDiefallah/Yellowcake.git cd Yellowcake dotnet restore dotnet build dotnet run
+git clone https://github.com/NaghDiefallah/Yellowcake.git
+cd Yellowcake
+dotnet restore
+dotnet build
+dotnet run
 ```
 
 ### Key Dependencies
