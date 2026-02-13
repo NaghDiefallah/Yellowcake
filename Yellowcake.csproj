@@ -15,9 +15,9 @@
 		<TrimMode>link</TrimMode>
 
 		<DebugType>embedded</DebugType>
-		<Version>1.2.7.5</Version>
-		<AssemblyVersion>1.2.7.5</AssemblyVersion>
-		<FileVersion>1.2.7.5</FileVersion>
+		<Version>1.2.7.6</Version>
+		<AssemblyVersion>1.2.7.6</AssemblyVersion>
+		<FileVersion>1.2.7.6</FileVersion>
 		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 	</PropertyGroup>
 
