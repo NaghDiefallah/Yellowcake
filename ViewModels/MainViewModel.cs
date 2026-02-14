@@ -61,7 +61,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _pathService = new PathService(_db);
-        _installService = installService ?? new InstallService(Path.Combine(AppContext.BaseDirectory, "Mods"), _pathService);
+        _installService = installService ?? new InstallService(_pathService);
         _modService = modService ?? new ModService(_db, _installService, http, gh);
         _manifestService = manifestService ?? new ManifestService(http);
         _downloadQueue = downloadQueue ?? new DownloadQueue(maxParallel: 4);
@@ -93,7 +93,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             var root = AppContext.BaseDirectory;
             var vaultPath = Path.Combine(root, "Mods");
             Directory.CreateDirectory(vaultPath);
-            var inst = new InstallService(Path.Combine(AppContext.BaseDirectory, "Mods"), _pathService);
+            var inst = new InstallService(_pathService);
             typeof(MainViewModel).GetField("_installService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, inst);
 
             var mod = new ModService(_db, inst, _http, _gh);

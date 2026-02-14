@@ -253,7 +253,7 @@ public partial class MainViewModel
     {
         try
         {
-            string themesPath = Path.Combine(AppContext.BaseDirectory, "Themes");
+            string themesPath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "themes");
             if (!Directory.Exists(themesPath)) Directory.CreateDirectory(themesPath);
             Process.Start(new ProcessStartInfo(themesPath) { UseShellExecute = true });
         }

@@ -37,7 +37,7 @@ public partial class DiagnosticsViewModel : ObservableObject
         AppMemoryUsage = $"{process.WorkingSet64 / 1024 / 1024:N0} MB";
 
         // Cache Size
-        var cachePath = Path.Combine(AppContext.BaseDirectory, "cache");
+        var cachePath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "cache");
         if (Directory.Exists(cachePath))
         {
             var cacheSize = Directory.GetFiles(cachePath, "*.*", SearchOption.AllDirectories)
@@ -46,7 +46,7 @@ public partial class DiagnosticsViewModel : ObservableObject
         }
 
         // Database Size
-        var dbPath = Path.Combine(AppContext.BaseDirectory, "yellowcake.db");
+        var dbPath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "data.db");
         if (File.Exists(dbPath))
         {
             DatabaseSize = $"{new FileInfo(dbPath).Length / 1024:N0} KB";
@@ -90,7 +90,7 @@ public partial class DiagnosticsViewModel : ObservableObject
     {
         try
         {
-            var cachePath = Path.Combine(AppContext.BaseDirectory, "cache");
+            var cachePath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "cache");
             if (Directory.Exists(cachePath))
             {
                 Directory.Delete(cachePath, true);

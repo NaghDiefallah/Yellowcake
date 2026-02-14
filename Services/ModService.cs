@@ -7,9 +7,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Yellowcake.Helpers;
 using Yellowcake.Models;
 using FileMode = System.IO.FileMode;
 
@@ -24,10 +26,10 @@ public class ModService
 
     public ModService(DatabaseService db, InstallService installService, HttpClient http, GitHubClient gh)
     {
-        _db = db;
-        _installService = installService;
-        _http = http;
-        _gh = gh;
+        _db = db ?? throw new ArgumentNullException(nameof(db));
+        _installService = installService ?? throw new ArgumentNullException(nameof(installService));
+        _http = http ?? throw new ArgumentNullException(nameof(http));
+        _gh = gh ?? throw new ArgumentNullException(nameof(gh));
     }
 
     public List<Mod> GetInstalledMods()
@@ -77,6 +79,8 @@ public class ModService
         Log.Information("Starting download: {ModName} v{Version} from {Url}", mod.Name, mod.Version, downloadUrl);
 
         var tempFile = Path.Combine(Path.GetTempPath(), $"{mod.Id}_{Guid.NewGuid()}.tmp");
+        var modStoragePath = GetModStoragePath(mod.Id);
+        var voiceStoragePath = Path.Combine(PathService.GetModsDirectory(), "WSOYappinator", "audio");
 
         try
         {
@@ -86,16 +90,15 @@ public class ModService
             
             Log.Information("Detected file type: {FileType} for {ModName}", fileType, mod.Name);
 
+            Directory.CreateDirectory(modStoragePath);
+
             switch (fileType)
             {
                 case FileType.Dll:
-                    Log.Information("Installing raw DLL file: {ModName}", mod.Name);
-                    await InstallRawDllAsync(mod, tempFile, ct);
+                    await InstallRawDllToStorageAsync(mod, tempFile, modStoragePath);
                     break;
 
                 case FileType.Archive:
-                    Log.Information("Installing from archive: {ModName}", mod.Name);
-                    
                     var hashToVerify = expectedHash ?? mod.EffectiveHash;
                     if (mod.ShouldVerifyHash && !string.IsNullOrWhiteSpace(hashToVerify))
                     {
@@ -108,18 +111,20 @@ public class ModService
                         }
                     }
 
-                    await _installService.InstallModAsync(mod, tempFile, ct);
+                    if(mod.IsVoicePack) await ExtractToStorageAsync(tempFile, voiceStoragePath, ct);
+                    await ExtractToStorageAsync(tempFile, modStoragePath, ct);
                     break;
 
                 case FileType.Invalid:
                 default:
                     throw new InvalidOperationException(
                         $"Downloaded file is not a valid archive or DLL. " +
-                        $"The download may have failed or the link may be incorrect.\n\n" +
-                        $"If this is a Google Drive file, it may require different sharing settings.");
+                        $"The download may have failed or the link may be incorrect.");
             }
 
             mod.MarkAsInstalled(mod.Version, mod.Hash);
+            
+            await EnableModAsync(mod);
 
             Log.Information("Successfully installed {ModName} v{Version}", mod.Name, mod.Version);
         }
@@ -146,7 +151,7 @@ public class ModService
         Dll
     }
 
-    private FileType DetectFileType(string filePath)
+    private static FileType DetectFileType(string filePath)
     {
         try
         {
@@ -154,41 +159,34 @@ public class ModService
             var buffer = new byte[4];
             fs.Read(buffer, 0, 4);
 
-            // ZIP magic: PK (0x50 0x4B)
             if (buffer[0] == 0x50 && buffer[1] == 0x4B)
             {
                 Log.Debug("Detected ZIP archive");
                 return FileType.Archive;
             }
 
-            // RAR magic: Rar! (0x52 0x61 0x72 0x21)
             if (buffer[0] == 0x52 && buffer[1] == 0x61 && buffer[2] == 0x72 && buffer[3] == 0x21)
             {
                 Log.Debug("Detected RAR archive");
                 return FileType.Archive;
             }
 
-            // 7z magic: 7z (0x37 0x7A 0xBC 0xAF)
             if (buffer[0] == 0x37 && buffer[1] == 0x7A && buffer[2] == 0xBC && buffer[3] == 0xAF)
             {
                 Log.Debug("Detected 7z archive");
                 return FileType.Archive;
             }
 
-            // GZIP magic: (0x1F 0x8B)
             if (buffer[0] == 0x1F && buffer[1] == 0x8B)
             {
                 Log.Debug("Detected GZIP archive");
                 return FileType.Archive;
             }
 
-            // MZ header (Windows PE - DLL/EXE) (0x4D 0x5A)
             if (buffer[0] == 0x4D && buffer[1] == 0x5A)
             {
                 Log.Information("Detected Windows PE file (DLL/EXE)");
                 
-                // Read more to check if it's actually a DLL
-                // PE files have "PE\0\0" signature at offset 0x3C
                 fs.Seek(0x3C, SeekOrigin.Begin);
                 var peOffset = new byte[4];
                 fs.Read(peOffset, 0, 4);
@@ -200,7 +198,7 @@ public class ModService
                     var peSignature = new byte[4];
                     fs.Read(peSignature, 0, 4);
                     
-                    if (peSignature[0] == 0x50 && peSignature[1] == 0x45) // "PE\0\0"
+                    if (peSignature[0] == 0x50 && peSignature[1] == 0x45)
                     {
                         Log.Information("Confirmed valid PE file - treating as DLL");
                         return FileType.Dll;
@@ -221,37 +219,202 @@ public class ModService
         }
     }
 
-    private async Task InstallRawDllAsync(Mod mod, string dllPath, CancellationToken ct)
+    private static string GetModStoragePath(string modId)
+    {
+        return Path.Combine(PathService.GetModsDirectory(), modId);
+    }
+
+    private string GetGameTargetPath(Mod mod)
+    {
+        var gamePath = _db.GetSetting("GamePath");
+        if (string.IsNullOrEmpty(gamePath))
+        {
+            throw new InvalidOperationException("Game path not set");
+        }
+
+        var gameDir = Path.GetDirectoryName(gamePath);
+        if (string.IsNullOrEmpty(gameDir))
+        {
+            throw new InvalidOperationException("Invalid game path");
+        }
+
+        if (mod.IsVoicePack)
+        {
+            return Path.Combine(gameDir, "BepInEx", "plugins", "WSOYappinator", "audio", mod.Id);
+        }
+
+        if (mod.IsMission)
+        {
+            return Path.Combine(gameDir, "Missions", mod.Id);
+        }
+
+        return Path.Combine(gameDir, "BepInEx", "plugins", mod.Id);
+    }
+
+    private async Task InstallRawDllToStorageAsync(Mod mod, string dllPath, string storagePath)
     {
         try
         {
-            var gamePath = _db.GetSetting("GamePath");
-            if (string.IsNullOrEmpty(gamePath))
-            {
-                throw new InvalidOperationException("Game path not set");
-            }
-
-            var gameDir = Path.GetDirectoryName(gamePath);
-            if (string.IsNullOrEmpty(gameDir))
-            {
-                throw new InvalidOperationException("Invalid game path");
-            }
-
-            var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
-            Directory.CreateDirectory(pluginsDir);
-
             var fileName = $"{mod.Id}.dll";
-            var targetPath = Path.Combine(pluginsDir, fileName);
+            var targetPath = Path.Combine(storagePath, fileName);
 
-            Log.Information("Installing raw DLL to: {Path}", targetPath);
+            Log.Information("Copying raw DLL to storage: {Path}", targetPath);
 
-            File.Copy(dllPath, targetPath, overwrite: true);
+            await Task.Run(() => File.Copy(dllPath, targetPath, overwrite: true));
 
-            Log.Information("Successfully installed raw DLL: {ModName}", mod.Name);
+            Log.Information("Successfully stored raw DLL: {ModName}", mod.Name);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to install raw DLL for {ModName}", mod.Name);
+            Log.Error(ex, "Failed to store raw DLL for {ModName}", mod.Name);
+            throw;
+        }
+    }
+
+    private async Task ExtractToStorageAsync(string archivePath, string storagePath, CancellationToken ct)
+    {
+        try
+        {
+            Log.Information("Extracting archive to storage: {Path}", storagePath);
+
+            await Task.Run(() => _installService.ExtractArchiveToPath(archivePath, storagePath, ct), ct);
+
+            Log.Information("Successfully extracted archive to storage");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to extract archive to storage");
+            throw;
+        }
+    }
+
+    private async Task EnableModAsync(Mod mod)
+    {
+        var sourcePath = GetModStoragePath(mod.Id);
+        var targetPath = GetGameTargetPath(mod);
+
+        if (!Directory.Exists(sourcePath))
+        {
+            throw new DirectoryNotFoundException($"Mod storage not found: {sourcePath}");
+        }
+
+        try
+        {
+            var targetParent = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrEmpty(targetParent))
+            {
+                Directory.CreateDirectory(targetParent);
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && JunctionManager.IsSupported)
+            {
+                if (Directory.Exists(targetPath) || File.Exists(targetPath))
+                {
+                    if (JunctionManager.IsSymbolicLink(targetPath))
+                    {
+                        JunctionManager.Remove(targetPath);
+                    }
+                    else
+                    {
+                        if (Directory.Exists(targetPath))
+                        {
+                            Directory.Delete(targetPath, true);
+                        }
+                        else
+                        {
+                            File.Delete(targetPath);
+                        }
+                    }
+                }
+
+                await Task.Run(() => JunctionManager.Create(targetPath, sourcePath, overwrite: true));
+                Log.Information("Created junction for {ModId}: {Target} -> {Source}", mod.Id, targetPath, sourcePath);
+            }
+            else
+            {
+                if (Directory.Exists(targetPath))
+                {
+                    Directory.Delete(targetPath, true);
+                }
+
+                await Task.Run(() => CopyDirectory(sourcePath, targetPath));
+                Log.Information("Copied mod files for {ModId} to {Target}", mod.Id, targetPath);
+            }
+
+            mod.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to enable mod: {ModId}", mod.Id);
+            throw;
+        }
+    }
+
+    private async Task DisableModAsync(Mod mod)
+    {
+        var targetPath = GetGameTargetPath(mod);
+
+        try
+        {
+            if (!Directory.Exists(targetPath) && !File.Exists(targetPath))
+            {
+                Log.Warning("Target path does not exist for mod: {ModId}", mod.Id);
+                return;
+            }
+
+            if (JunctionManager.IsSymbolicLink(targetPath))
+            {
+                await Task.Run(() => JunctionManager.Remove(targetPath));
+                Log.Information("Removed junction for mod: {ModId}", mod.Id);
+            }
+            else
+            {
+                await Task.Run(() =>
+                {
+                    if (Directory.Exists(targetPath))
+                    {
+                        Directory.Delete(targetPath, true);
+                    }
+                    else if (File.Exists(targetPath))
+                    {
+                        File.Delete(targetPath);
+                    }
+                });
+                Log.Information("Deleted mod files for: {ModId}", mod.Id);
+            }
+
+            mod.IsEnabled = false;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to disable mod: {ModId}", mod.Id);
+            throw;
+        }
+    }
+
+    public async Task ToggleModAsync(Mod mod)
+    {
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+
+        try
+        {
+            if (mod.IsEnabled)
+            {
+                await DisableModAsync(mod);
+                NotificationService.Instance.Info($"{mod.Name} is now disabled");
+            }
+            else
+            {
+                await EnableModAsync(mod);
+                NotificationService.Instance.Success($"{mod.Name} is now enabled");
+            }
+
+            _db.Upsert("addons", mod);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to toggle mod: {ModId}", mod.Id);
+            NotificationService.Instance.Error($"Failed to toggle {mod.Name}");
             throw;
         }
     }
@@ -263,78 +426,44 @@ public class ModService
             throw new ArgumentNullException(nameof(modId));
         }
 
-        var gamePath = _db.GetSetting("GamePath");
-        if (string.IsNullOrEmpty(gamePath))
+        var mod = _db.GetAll<Mod>("addons").FirstOrDefault(m => m.Id == modId);
+        if (mod == null)
         {
-            throw new InvalidOperationException("Game path not set");
+            throw new InvalidOperationException($"Mod not found: {modId}");
         }
 
-        var gameDir = Path.GetDirectoryName(gamePath);
-        if (string.IsNullOrEmpty(gameDir))
+        if (mod.IsEnabled == isEnabled)
         {
-            throw new InvalidOperationException("Invalid game path");
+            return;
         }
 
-        var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
-        
-        if (!Directory.Exists(pluginsDir))
+        Task.Run(async () => await ToggleModAsync(mod)).Wait();
+    }
+
+    public async Task DeleteModAsync(Mod mod)
+    {
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+
+        try
         {
-            throw new DirectoryNotFoundException($"Plugins directory not found: {pluginsDir}");
-        }
+            await DisableModAsync(mod);
 
-        var modPath = Path.Combine(pluginsDir, modId);
-        var modDll = Path.Combine(pluginsDir, $"{modId}.dll");
+            var storagePath = GetModStoragePath(mod.Id);
 
-        if (Directory.Exists(modPath))
-        {
-            var targetPath = isEnabled 
-                ? modPath 
-                : modPath + ".disabled";
-
-            if (isEnabled)
+            if (Directory.Exists(storagePath))
             {
-                if (Directory.Exists(modPath + ".disabled"))
-                {
-                    Directory.Move(modPath + ".disabled", modPath);
-                    Log.Information("Enabled mod folder: {ModId}", modId);
-                }
+                await Task.Run(() => Directory.Delete(storagePath, true));
+                Log.Information("Deleted mod storage: {Path}", storagePath);
             }
-            else
-            {
-                if (Directory.Exists(modPath))
-                {
-                    Directory.Move(modPath, targetPath);
-                    Log.Information("Disabled mod folder: {ModId}", modId);
-                }
-            }
-        }
-        else if (File.Exists(modDll))
-        {
-            var targetPath = isEnabled 
-                ? modDll 
-                : modDll + ".disabled";
 
-            if (isEnabled)
-            {
-                if (File.Exists(modDll + ".disabled"))
-                {
-                    File.Move(modDll + ".disabled", modDll);
-                    Log.Information("Enabled mod DLL: {ModId}", modId);
-                }
-            }
-            else
-            {
-                if (File.Exists(modDll))
-                {
-                    File.Move(modDll, targetPath);
-                    Log.Information("Disabled mod DLL: {ModId}", modId);
-                }
-            }
+            _db.Delete("addons", mod.Id);
+
+            Log.Information("Successfully deleted mod: {ModId}", mod.Id);
         }
-        else
+        catch (Exception ex)
         {
-            Log.Warning("Mod not found for toggle: {ModId}", modId);
-            throw new FileNotFoundException($"Mod not found: {modId}");
+            Log.Error(ex, "Failed to delete mod: {ModId}", mod.Id);
+            throw;
         }
     }
 
@@ -345,79 +474,13 @@ public class ModService
             throw new ArgumentNullException(nameof(modId));
         }
 
-        var gamePath = _db.GetSetting("GamePath");
-        if (string.IsNullOrEmpty(gamePath))
+        var mod = _db.GetAll<Mod>("addons").FirstOrDefault(m => m.Id == modId);
+        if (mod == null)
         {
-            throw new InvalidOperationException("Game path not set");
+            throw new InvalidOperationException($"Mod not found: {modId}");
         }
 
-        var gameDir = Path.GetDirectoryName(gamePath);
-        if (string.IsNullOrEmpty(gameDir))
-        {
-            throw new InvalidOperationException("Invalid game path");
-        }
-
-        Log.Information("Deleting mod: {ModId}", modId);
-
-        var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
-        var modFolder = Path.Combine(pluginsDir, modId);
-        var modDll = Path.Combine(pluginsDir, $"{modId}.dll");
-        var modDllDisabled = modDll + ".disabled";
-        var modFolderDisabled = modFolder + ".disabled";
-
-        bool deleted = false;
-
-        if (Directory.Exists(modFolder))
-        {
-            Directory.Delete(modFolder, true);
-            Log.Information("Deleted mod folder: {Path}", modFolder);
-            deleted = true;
-        }
-
-        if (Directory.Exists(modFolderDisabled))
-        {
-            Directory.Delete(modFolderDisabled, true);
-            Log.Information("Deleted disabled mod folder: {Path}", modFolderDisabled);
-            deleted = true;
-        }
-
-        if (File.Exists(modDll))
-        {
-            File.Delete(modDll);
-            Log.Information("Deleted mod DLL: {Path}", modDll);
-            deleted = true;
-        }
-
-        if (File.Exists(modDllDisabled))
-        {
-            File.Delete(modDllDisabled);
-            Log.Information("Deleted disabled mod DLL: {Path}", modDllDisabled);
-            deleted = true;
-        }
-
-        var voicePackPath = Path.Combine(pluginsDir, "WSOYappinator", "audio", modId);
-        if (Directory.Exists(voicePackPath))
-        {
-            Directory.Delete(voicePackPath, true);
-            Log.Information("Deleted voice pack: {Path}", voicePackPath);
-            deleted = true;
-        }
-
-        var missionsPath = Path.Combine(gameDir, "Missions", modId);
-        if (Directory.Exists(missionsPath))
-        {
-            Directory.Delete(missionsPath, true);
-            Log.Information("Deleted mission: {Path}", missionsPath);
-            deleted = true;
-        }
-
-        if (!deleted)
-        {
-            Log.Warning("Mod not found for deletion: {ModId}", modId);
-            throw new FileNotFoundException($"Mod not found: {modId}");
-        }
-
-        Log.Information("Successfully deleted mod: {ModId}", modId);
+        Task.Run(async () => await DeleteModAsync(mod)).Wait();
     }
 
     public static bool HasUpdate(Mod installed, Mod remote)
@@ -641,6 +704,89 @@ public class ModService
         catch (Exception ex)
         {
             Log.Error(ex, "Download failed for {Url}", url);
+            throw;
+        }
+    }
+
+    private static void CopyDirectory(string sourceDir, string destinationDir)
+    {
+        var dir = new DirectoryInfo(sourceDir);
+
+        if (!dir.Exists)
+        {
+            throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+        }
+
+        Directory.CreateDirectory(destinationDir);
+
+        foreach (var file in dir.GetFiles())
+        {
+            var targetFilePath = Path.Combine(destinationDir, file.Name);
+            file.CopyTo(targetFilePath, true);
+        }
+
+        foreach (var subDir in dir.GetDirectories())
+        {
+            var newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+            CopyDirectory(subDir.FullName, newDestinationDir);
+        }
+    }
+
+    public bool VerifyModStorage(string modId)
+    {
+        try
+        {
+            var storagePath = GetModStoragePath(modId);
+            
+            if (!Directory.Exists(storagePath))
+            {
+                Log.Warning("Mod storage not found: {Path}", storagePath);
+                return false;
+            }
+
+            var hasFiles = Directory.EnumerateFileSystemEntries(storagePath, "*", SearchOption.AllDirectories).Any();
+            
+            if (!hasFiles)
+            {
+                Log.Warning("Mod storage is empty: {Path}", storagePath);
+                return false;
+            }
+
+            Log.Debug("Mod storage verified for {ModId}", modId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Verification failed for {ModId}", modId);
+            return false;
+        }
+    }
+
+    public async Task RepairModAsync(Mod mod)
+    {
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+
+        try
+        {
+            Log.Information("Attempting to repair mod: {ModId}", mod.Id);
+
+            if (!VerifyModStorage(mod.Id))
+            {
+                throw new InvalidOperationException("Mod storage is missing or corrupted. Please reinstall the mod.");
+            }
+
+            if (mod.IsEnabled)
+            {
+                await DisableModAsync(mod);
+                await EnableModAsync(mod);
+                Log.Information("Successfully repaired mod: {ModId}", mod.Id);
+                NotificationService.Instance.Success($"Repaired {mod.Name}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to repair mod: {ModId}", mod.Id);
+            NotificationService.Instance.Error($"Failed to repair {mod.Name}");
             throw;
         }
     }

@@ -113,6 +113,26 @@ public class PathService
         return GetOrCreateDirectory(missionPath);
     }
 
+    public static string GetModsDirectory()
+    {
+        var modsPath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "mods");
+        
+        if (!Directory.Exists(modsPath))
+        {
+            try
+            {
+                Directory.CreateDirectory(modsPath);
+                Log.Debug("Created mods directory: {Path}", modsPath);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to create mods directory");
+            }
+        }
+
+        return modsPath;
+    }
+
     private string GetOrCreateDirectory(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return path;

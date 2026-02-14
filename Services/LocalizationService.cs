@@ -34,11 +34,11 @@ public class LocalizationService
     {
         try
         {
-            var langPath = Path.Combine(AppContext.BaseDirectory, "Languages", $"{languageCode}.json");
+            var langPath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "lang", $"{languageCode}.json");
             
             if (!File.Exists(langPath))
             {
-                langPath = Path.Combine(AppContext.BaseDirectory, "Languages", "en.json");
+                langPath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "lang", "en.json");
             }
 
             if (File.Exists(langPath))

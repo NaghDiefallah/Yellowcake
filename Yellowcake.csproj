@@ -15,9 +15,9 @@
 		<TrimMode>link</TrimMode>
 
 		<DebugType>embedded</DebugType>
-		<Version>1.2.7.11</Version>
-		<AssemblyVersion>1.2.7.11</AssemblyVersion>
-		<FileVersion>1.2.7.11</FileVersion>
+		<Version>1.2.8.0</Version>
+		<AssemblyVersion>1.2.8.0</AssemblyVersion>
+		<FileVersion>1.2.8.0</FileVersion>
 		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 	</PropertyGroup>
 
@@ -59,9 +59,5 @@
 		</PackageReference>
 		<PackageReference Include="xunit.assert" Version="2.9.3" />
 		<PackageReference Include="xunit.core" Version="2.9.3" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Mods\" />
 	</ItemGroup>
 </Project>

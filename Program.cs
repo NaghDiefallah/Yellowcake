@@ -19,12 +19,10 @@ class Program
             ConfigureLogging();
             
             Log.Information("Starting Avalonia application...");
-            Log.Debug("Platform: {Platform}", GetPlatformName());
+            Log.Debug("Platform: {Platform}", Environment.OSVersion);
             
-            var app = BuildAvaloniaApp();
-            app.StartWithClassicDesktopLifetime(args);
-            
-            Log.Information("Application shutdown completed");
+            BuildAvaloniaApp()
+                .StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
         {
@@ -48,7 +46,7 @@ class Program
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
             .MinimumLevel.Override("Avalonia", LogEventLevel.Warning)
             .Enrich.FromLogContext()
