@@ -56,7 +56,7 @@ public partial class EmptyState : UserControl
     public EmptyState()
     {
         InitializeComponent();
-        
+
         Icon.Bind(PathIcon.DataProperty, this.GetObservable(IconDataProperty));
         Title.Bind(TextBlock.TextProperty, this.GetObservable(TitleTextProperty));
         Description.Bind(TextBlock.TextProperty, this.GetObservable(DescriptionTextProperty));

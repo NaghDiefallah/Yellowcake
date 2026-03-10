@@ -271,7 +271,7 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(GameStatus));
         _isLoading = true;
         OnPropertyChanged(nameof(IsLoading));
-        
+
         try
         {
             await LoadAvailableModsAsync();

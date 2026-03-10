@@ -139,7 +139,7 @@ public partial class MainViewModel
             // Load available mods and sync installed states
             await LoadAvailableModsAsync();
             await SyncInstalledStates();
-            
+
             // Check for updates on installed mods
             var installedWithUpdates = 0;
             foreach (var mod in InstalledMods)
@@ -154,10 +154,10 @@ public partial class MainViewModel
 
             await RefreshUI();
 
-            var message = installedWithUpdates > 0 
+            var message = installedWithUpdates > 0
                 ? $"Refresh complete. {installedWithUpdates} update(s) available."
                 : "Refresh complete. All mods are up to date.";
-            
+
             NotificationService.Instance.Success(message);
             Log.Information("Manual refresh completed");
         }

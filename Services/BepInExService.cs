@@ -36,7 +36,7 @@ public class BepInExService : IDisposable
                 {
                     var cleanTag = tag.StartsWith("v") ? tag.Substring(1) : tag;
                     var majorVersion = cleanTag.Split('.')[0];
-                    
+
                     return majorVersion == "5" && Version.TryParse(cleanTag.Split('-')[0], out _);
                 })
                 .OrderByDescending(tag =>

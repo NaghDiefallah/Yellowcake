@@ -31,7 +31,7 @@ public class InstallService
     {
         if (string.IsNullOrWhiteSpace(archivePath))
             throw new ArgumentNullException(nameof(archivePath));
-        
+
         if (string.IsNullOrWhiteSpace(targetPath))
             throw new ArgumentNullException(nameof(targetPath));
 
@@ -106,13 +106,13 @@ public class InstallService
         catch (Exception ex)
         {
             Log.Error(ex, "[InstallService] Failed to extract archive: {Archive}", archivePath);
-            
+
             if (File.Exists(archivePath))
             {
                 var fileInfo = new FileInfo(archivePath);
                 Log.Error("[InstallService] Archive size: {Size} bytes", fileInfo.Length);
             }
-            
+
             throw new InvalidOperationException(
                 "Failed to extract archive. The file may be corrupted or not a valid ZIP file.", ex);
         }
@@ -196,7 +196,7 @@ public class InstallService
         catch (Exception ex)
         {
             Log.Error(ex, "[InstallService] Installation failed for {ModName}", mod.Name);
-            
+
             try
             {
                 if (Directory.Exists(installPath))
@@ -257,7 +257,7 @@ public class InstallService
         try
         {
             var installPath = DetermineInstallPath(mod);
-            
+
             if (!Directory.Exists(installPath))
             {
                 Log.Warning("[InstallService] Installation directory not found: {Path}", installPath);
@@ -265,7 +265,7 @@ public class InstallService
             }
 
             var hasFiles = Directory.EnumerateFileSystemEntries(installPath, "*", SearchOption.AllDirectories).Any();
-            
+
             if (!hasFiles)
             {
                 Log.Warning("[InstallService] Installation directory is empty: {Path}", installPath);

@@ -95,7 +95,7 @@ public class ModService
             await DownloadFileWithProgressAsync(downloadUrl, tempFile, progress, ct);
 
             var fileType = DetectFileType(tempFile);
-            
+
             Log.Information("Detected file type: {FileType} for {ModName}", fileType, mod.Name);
 
             Directory.CreateDirectory(modStoragePath);
@@ -112,7 +112,7 @@ public class ModService
                     {
                         Log.Information("Verifying hash for {ModName}", mod.Name);
                         var hashResult = await VerifyHashAsync(tempFile, hashToVerify);
-                        
+
                         if (!hashResult.Success && hashResult.ErrorMessage != null)
                         {
                             // Log warning but don't block installation
@@ -134,7 +134,7 @@ public class ModService
             }
 
             mod.MarkAsInstalled(mod.Version, mod.Hash);
-            
+
             await EnableModAsync(mod);
 
             Log.Information("Successfully installed {ModName} v{Version}", mod.Name, mod.Version);
@@ -197,25 +197,25 @@ public class ModService
             if (buffer[0] == 0x4D && buffer[1] == 0x5A)
             {
                 Log.Information("Detected Windows PE file (DLL/EXE)");
-                
+
                 fs.Seek(0x3C, SeekOrigin.Begin);
                 var peOffset = new byte[4];
                 fs.ReadExactly(peOffset, 0, 4);
                 var peHeaderOffset = BitConverter.ToInt32(peOffset, 0);
-                
+
                 if (peHeaderOffset > 0 && peHeaderOffset < fs.Length - 4)
                 {
                     fs.Seek(peHeaderOffset, SeekOrigin.Begin);
                     var peSignature = new byte[4];
                     fs.ReadExactly(peSignature, 0, 4);
-                    
+
                     if (peSignature[0] == 0x50 && peSignature[1] == 0x45)
                     {
                         Log.Information("Confirmed valid PE file - treating as DLL");
                         return FileType.Dll;
                     }
                 }
-                
+
                 Log.Warning("MZ header found but not a valid PE file");
                 return FileType.Invalid;
             }
@@ -1060,7 +1060,7 @@ public class ModService
 
     public async Task<(bool Success, string Hash, string? ErrorMessage)> VerifyHashAsync(string filePath, string? expectedHash)
     {
-        if (string.IsNullOrWhiteSpace(expectedHash) || 
+        if (string.IsNullOrWhiteSpace(expectedHash) ||
             expectedHash.Equals("null", StringComparison.OrdinalIgnoreCase))
         {
             Log.Debug("No hash provided for verification, skipping");
@@ -1100,7 +1100,7 @@ public class ModService
     public async Task<bool> ValidateDependenciesAsync(Mod mod, List<Mod> installedMods)
     {
         var modDependencies = mod.Dependencies;
-        
+
         if (modDependencies == null || !modDependencies.Any())
             return true;
 
@@ -1108,7 +1108,7 @@ public class ModService
 
         foreach (var depId in modDependencies)
         {
-            var isInstalled = installedMods.Any(m => 
+            var isInstalled = installedMods.Any(m =>
                 string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase));
 
             if (!isInstalled)
@@ -1119,7 +1119,7 @@ public class ModService
 
         if (missing.Any())
         {
-            Log.Warning("Missing dependencies for {Mod}: {Dependencies}", 
+            Log.Warning("Missing dependencies for {Mod}: {Dependencies}",
                 mod.Name, string.Join(", ", missing));
             return false;
         }
@@ -1136,7 +1136,7 @@ public class ModService
         {
             foreach (var conflictId in modConflicts)
             {
-                var conflictingMod = installedMods.FirstOrDefault(m => 
+                var conflictingMod = installedMods.FirstOrDefault(m =>
                     string.Equals(m.Id, conflictId, StringComparison.OrdinalIgnoreCase));
 
                 if (conflictingMod != null)
@@ -1158,7 +1158,7 @@ public class ModService
         };
 
         var downloadUrl = mod.DownloadUrl;
-        
+
         if (string.IsNullOrWhiteSpace(downloadUrl))
         {
             result.IsValid = false;
@@ -1170,9 +1170,9 @@ public class ModService
         {
             result.HasMissingDependencies = true;
             var modDependencies = mod.Dependencies;
-            
+
             result.MissingDependencies = modDependencies
-                .Where(depId => !installedMods.Any(m => 
+                .Where(depId => !installedMods.Any(m =>
                     string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
             result.Warnings.Add($"Missing {result.MissingDependencies.Count} dependencies");
@@ -1190,41 +1190,41 @@ public class ModService
     }
 
     private async Task DownloadFileWithProgressAsync(
-        string url, 
-        string destinationPath, 
-        IProgress<double> progress, 
+        string url,
+        string destinationPath,
+        IProgress<double> progress,
         CancellationToken ct)
     {
         try
         {
             using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            
+
             var contentType = response.Content.Headers.ContentType?.MediaType;
             if (contentType != null && contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
             {
                 Log.Warning("Received HTML instead of file. URL may need conversion: {Url}", url);
-                
+
                 var html = await response.Content.ReadAsStringAsync(ct);
-                
+
                 if (GoogleDriveHelper.IsVirusScanWarning(html))
                 {
                     Log.Warning("Google Drive virus warning detected, attempting confirmation download");
-                    
+
                     var fileId = GoogleDriveHelper.ExtractFileId(url);
                     if (!string.IsNullOrEmpty(fileId))
                     {
                         var confirmUrl = $"https://drive.usercontent.google.com/download?id={fileId}&export=download&confirm=t";
                         Log.Information("Retrying with confirmation URL: {Url}", confirmUrl);
-                        
+
                         await DownloadFileWithProgressAsync(confirmUrl, destinationPath, progress, ct);
                         return;
                     }
-                    
+
                     throw new InvalidOperationException(
                         "Google Drive file requires confirmation but could not extract file ID. " +
                         "Please use a different hosting service or share the file as 'Anyone with the link'.");
                 }
-                
+
                 throw new InvalidOperationException(
                     "Received HTML page instead of file. The download link may be incorrect or require authentication.");
             }
@@ -1291,7 +1291,7 @@ public class ModService
         try
         {
             var storagePath = GetModStoragePath(modId);
-            
+
             if (!Directory.Exists(storagePath))
             {
                 Log.Warning("Mod storage not found: {Path}", storagePath);
@@ -1299,7 +1299,7 @@ public class ModService
             }
 
             var hasFiles = Directory.EnumerateFileSystemEntries(storagePath, "*", SearchOption.AllDirectories).Any();
-            
+
             if (!hasFiles)
             {
                 Log.Warning("Mod storage is empty: {Path}", storagePath);

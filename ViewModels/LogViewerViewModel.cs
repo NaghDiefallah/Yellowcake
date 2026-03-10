@@ -26,7 +26,7 @@ public partial class LogViewerViewModel : ObservableObject
     private int _lastLogCount = 0;
 
     public string[] LogLevels { get; } = new[] { "All", "Debug", "Information", "Warning", "Error", "Fatal" };
-    
+
     public int TotalLogCount => _allLogs.Count;
     public int FilteredLogCount => FilteredLogs.Count;
 
@@ -79,7 +79,7 @@ public partial class LogViewerViewModel : ObservableObject
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             var exportPath = Path.Combine(Path.GetTempPath(), $"yellowcake_logs_{timestamp}.txt");
 
-            var lines = FilteredLogs.Select(l => 
+            var lines = FilteredLogs.Select(l =>
             {
                 var message = $"[{l.Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{l.Level}] {l.Message}";
                 return message;
@@ -103,14 +103,14 @@ public partial class LogViewerViewModel : ObservableObject
         try
         {
             var logEvents = InMemorySink.Instance.GetLogs();
-            
+
             // Only update if there are new logs
             if (logEvents.Length == _lastLogCount)
                 return;
 
             _lastLogCount = logEvents.Length;
             _allLogs.Clear();
-            
+
             foreach (var logEvent in logEvents)
             {
                 var entry = new LogEntry
@@ -140,14 +140,14 @@ public partial class LogViewerViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(FilterText))
         {
-            filtered = filtered.Where(l => 
+            filtered = filtered.Where(l =>
                 l.Message.Contains(FilterText, StringComparison.OrdinalIgnoreCase) ||
                 l.Level.Contains(FilterText, StringComparison.OrdinalIgnoreCase));
         }
 
         if (SelectedLevel != "All")
         {
-            filtered = filtered.Where(l => 
+            filtered = filtered.Where(l =>
                 l.Level.Equals(SelectedLevel, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -159,14 +159,14 @@ public partial class LogViewerViewModel : ObservableObject
         {
             FilteredLogs.Add(log);
         }
-        
+
         OnPropertyChanged(nameof(FilteredLogCount));
     }
 
     private static SolidColorBrush GetBrushForLevel(string level)
     {
         var normalizedLevel = level.Trim().ToUpperInvariant();
-        
+
         var color = normalizedLevel switch
         {
             "DEBUG" or "VERBOSE" or "DBG" => Color.Parse("#6C757D"),
@@ -176,7 +176,7 @@ public partial class LogViewerViewModel : ObservableObject
             "FATAL" or "CRITICAL" or "FTL" or "CRT" => Color.Parse("#8B0000"),
             _ => Color.Parse("#6C757D")
         };
-        
+
         return new SolidColorBrush(color);
     }
 }

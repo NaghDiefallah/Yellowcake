@@ -106,10 +106,10 @@ public class NotificationService : INotificationService
             HandleClose);
 
         _activeNotifications.TryAdd(notificationId, notification);
-        
+
         _manager.Show(notification);
-        
-        Log.Debug("[NotificationService] Shown: {Title} (closeable, expires in {Expiration}s)", 
+
+        Log.Debug("[NotificationService] Shown: {Title} (closeable, expires in {Expiration}s)",
             title, (expiration ?? GetExpiration(type)).TotalSeconds);
     }
 
@@ -122,20 +122,20 @@ public class NotificationService : INotificationService
     public void Error(string message, Action? retryAction = null, TimeSpan? expiration = null)
     {
         Log.Error("[Notification] Error: {Message}", message);
-        
+
         if (retryAction != null)
         {
-            Show("✗ Error", 
-                $"{message}\n\n👆 Click to retry • ✕ Close", 
-                NotificationType.Error, 
-                expiration ?? TimeSpan.FromSeconds(15), 
+            Show("✗ Error",
+                $"{message}\n\n👆 Click to retry • ✕ Close",
+                NotificationType.Error,
+                expiration ?? TimeSpan.FromSeconds(15),
                 retryAction);
         }
         else
         {
-            Show("✗ Error", 
-                message, 
-                NotificationType.Error, 
+            Show("✗ Error",
+                message,
+                NotificationType.Error,
                 expiration ?? TimeSpan.FromSeconds(10));
         }
     }
@@ -253,10 +253,10 @@ public class NotificationService : INotificationService
                 ctx.Tcs.TrySetResult(false);
                 ctx.Cts.Cancel();
             }
-            
+
             _pending.Clear();
             _count = 0;
-            
+
             Log.Debug("[NotificationService] Cleared all notifications");
         });
     }

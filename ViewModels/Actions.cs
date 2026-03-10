@@ -27,7 +27,7 @@ public partial class MainViewModel
 
     [ObservableProperty] private string _downloadETA = string.Empty;
     [ObservableProperty] private double _downloadSpeedMBps = 0;
-    
+
     private Stopwatch? _downloadTimer;
     private DateTime _lastSpeedUpdate = DateTime.UtcNow;
 
@@ -169,7 +169,7 @@ public partial class MainViewModel
                     downloadStopwatch.Elapsed,
                     downloadSuccess
                 );
-                Log.Debug("Recorded performance metric for {ModName}: {Duration}s, {Success}", 
+                Log.Debug("Recorded performance metric for {ModName}: {Duration}s, {Success}",
                     mod.Name, downloadStopwatch.Elapsed.TotalSeconds, downloadSuccess);
             }
             catch (Exception ex)
@@ -433,7 +433,7 @@ public partial class MainViewModel
         try
         {
             var isValid = _installService.VerifyInstallation(mod);
-            
+
             if (isValid)
             {
                 NotificationService.Instance.Success($"{mod.Name} passed verification");
@@ -483,7 +483,7 @@ public partial class MainViewModel
 
         try
         {
-            var issueUrl = mod.InfoUrl.Contains("github.com") 
+            var issueUrl = mod.InfoUrl.Contains("github.com")
                 ? mod.InfoUrl.TrimEnd('/') + "/issues"
                 : mod.InfoUrl;
 
@@ -513,7 +513,7 @@ public partial class MainViewModel
             mod.DownloadProgress = 0;
 
             transaction = new InstallTransaction(mod, _installService, _db);
-            
+
             await transaction.BeginAsync();
 
             var progress = new Progress<double>(p =>
@@ -522,9 +522,9 @@ public partial class MainViewModel
             });
 
             await _modService.DownloadAndInstallModAsync(
-                mod, 
-                progress, 
-                _allRemoteMods, 
+                mod,
+                progress,
+                _allRemoteMods,
                 _shutdownCts.Token
             );
 
@@ -534,13 +534,13 @@ public partial class MainViewModel
 
             await RefreshUI();
             NotificationService.Instance.Success($"{mod.Name} installed successfully!");
-            
+
             Log.Information("Transaction completed successfully for {ModName}", mod.Name);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Transaction failed for {ModName}", mod.Name);
-            
+
             if (transaction != null)
             {
                 await transaction.RollbackAsync();
@@ -558,7 +558,7 @@ public partial class MainViewModel
             transaction?.Dispose();
         }
     }
-    
+
     [RelayCommand]
     private async Task ViewScreenshots(Mod? mod)
     {
@@ -648,15 +648,15 @@ public partial class MainViewModel
             // Install the DLL directly to plugins folder
             var pluginsFolder = _pathService.GetPluginsDirectory();
             Directory.CreateDirectory(pluginsFolder);
-            
+
             var targetPath = Path.Combine(pluginsFolder, fileName);
             File.Copy(dllPath, targetPath, overwrite: true);
-            
+
             mod.IsInstalled = true;
 
             // Add to database and UI
             _db.Upsert("installed_mods", mod);
-            
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (!_installedMods.Any(m => m.Id == mod.Id))
@@ -722,7 +722,7 @@ public partial class MainViewModel
 
             // Install using the install service
             await _installService.InstallModAsync(mod, zipPath);
-            
+
             mod.IsInstalled = true;
             _db.Upsert("installed_mods", mod);
 
@@ -735,7 +735,7 @@ public partial class MainViewModel
             });
 
             NotificationService.Instance.Success($"Mod installed from: {fileName}");
-            
+
             // Refresh the installed mods list
             await SyncInstalledStates();
             await RefreshUI();
@@ -760,31 +760,31 @@ public partial class MainViewModel
         try
         {
             Log.Information("=== TESTING INSTALL FLOW ===");
-            
+
             // 1. Check game path
             var gamePath = _db.GetSetting("GamePath");
-            Log.Information("Game Path: {Path} | Exists: {Exists}", 
+            Log.Information("Game Path: {Path} | Exists: {Exists}",
                 gamePath, !string.IsNullOrEmpty(gamePath) && File.Exists(gamePath));
-            
+
             // 2. Check BepInEx
             var bepInstalled = _modService.IsBepInExInstalled();
             Log.Information("BepInEx Installed: {Installed}", bepInstalled);
-            
+
             // 3. Check plugins folder
             if (!string.IsNullOrEmpty(gamePath))
             {
                 var gameDir = Path.GetDirectoryName(gamePath);
                 var pluginsDir = Path.Combine(gameDir ?? "", "BepInEx", "plugins");
-                Log.Information("Plugins Dir: {Dir} | Exists: {Exists}", 
+                Log.Information("Plugins Dir: {Dir} | Exists: {Exists}",
                     pluginsDir, Directory.Exists(pluginsDir));
             }
-            
+
             // 4. Check database
             var installedCount = _db.GetAll<Mod>("addons").Count;
             Log.Information("Installed mods in DB: {Count}", installedCount);
-            
+
             Log.Information("=== TEST COMPLETE ===");
-            
+
             NotificationService.Instance.Success("Test complete - check logs");
         }
         catch (Exception ex)

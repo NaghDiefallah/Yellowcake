@@ -26,7 +26,7 @@ public partial class ModDetailsDrawer : UserControl
     public ModDetailsDrawer()
     {
         InitializeComponent();
-        
+
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         DataContextChanged += OnDataContextChanged;
@@ -37,7 +37,7 @@ public partial class ModDetailsDrawer : UserControl
         if (_isInitialized) return;
 
         _scrollViewer = this.FindDescendantOfType<ScrollViewer>();
-        
+
         if (_scrollViewer != null)
         {
             // Smooth scrolling configuration
@@ -59,7 +59,8 @@ public partial class ModDetailsDrawer : UserControl
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
-    { if (_isInitialized) return;
+    {
+        if (_isInitialized) return;
         if (_scrollViewer != null && DataContext is MainViewModel vm && vm.IsDetailsOpen)
         {
             Dispatcher.UIThread.Post(() =>
@@ -98,10 +99,10 @@ public partial class ModDetailsDrawer : UserControl
 
         var delta = e.Delta.Y * 50;
         var newOffset = _scrollViewer.Offset.Y - delta;
-        
+
         newOffset = Math.Max(0, Math.Min(newOffset, _scrollViewer.Extent.Height - _scrollViewer.Viewport.Height));
         _scrollViewer.Offset = new Avalonia.Vector(0, newOffset);
-        
+
         e.Handled = true;
     }
 

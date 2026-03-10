@@ -52,7 +52,7 @@ public partial class MainViewModel
         { OfficialManifestName, OfficialManifestUrl }
     };
 
-    partial void OnIsSettingsOpenChanged(bool value) 
+    partial void OnIsSettingsOpenChanged(bool value)
     {
         if (value)
         {
@@ -112,7 +112,7 @@ public partial class MainViewModel
         }
     }
 
-    [RelayCommand] 
+    [RelayCommand]
     private void ClearCache() => NotificationService.Instance.Info("Cache cleared");
 
     private void InitializeSettings()
@@ -152,11 +152,11 @@ public partial class MainViewModel
                 }).ToList()
             };
 
-            var json = JsonSerializer.Serialize(modLibrary, new JsonSerializerOptions 
-            { 
-                WriteIndented = false 
+            var json = JsonSerializer.Serialize(modLibrary, new JsonSerializerOptions
+            {
+                WriteIndented = false
             });
-            
+
             SettingsShareCode = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
@@ -225,7 +225,7 @@ public partial class MainViewModel
             {
                 if (installedIds.Contains(snapshot.Id)) continue;
 
-                var targetMod = _availableMods.FirstOrDefault(m => 
+                var targetMod = _availableMods.FirstOrDefault(m =>
                     string.Equals(m.Id, snapshot.Id, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(m.Name, snapshot.Name, StringComparison.OrdinalIgnoreCase));
 
@@ -302,10 +302,10 @@ public partial class MainViewModel
             Title = "Export Mod List",
             SuggestedFileName = $"Yellowcake-Library-{DateTime.Now:yyyy-MM-dd}.json",
             DefaultExtension = "json",
-            FileTypeChoices = new[] 
-            { 
+            FileTypeChoices = new[]
+            {
                 new FilePickerFileType("Mod Library") { Patterns = new[] { "*.json" } },
-                FilePickerFileTypes.All 
+                FilePickerFileTypes.All
             }
         });
 
@@ -327,9 +327,9 @@ public partial class MainViewModel
                 }).ToList()
             };
 
-            var json = JsonSerializer.Serialize(library, new JsonSerializerOptions 
-            { 
-                WriteIndented = true 
+            var json = JsonSerializer.Serialize(library, new JsonSerializerOptions
+            {
+                WriteIndented = true
             });
 
             await using var stream = await file.OpenWriteAsync();
@@ -348,25 +348,25 @@ public partial class MainViewModel
 
     partial void OnSelectedSourceChanged(KeyValuePair<string, string> value)
     {
-    _manifestService.TargetUrl = OfficialManifestUrl;
-    SelectedSourceName = OfficialManifestName;
-    _db.SaveSetting("ManifestSourceFriendlyName", OfficialManifestName);
+        _manifestService.TargetUrl = OfficialManifestUrl;
+        SelectedSourceName = OfficialManifestName;
+        _db.SaveSetting("ManifestSourceFriendlyName", OfficialManifestName);
 
-    Log.Information("Source set to {Name}: {Url}", OfficialManifestName, OfficialManifestUrl);
+        Log.Information("Source set to {Name}: {Url}", OfficialManifestName, OfficialManifestUrl);
 
-    _ = Task.Run(async () =>
-    {
-        try
+        _ = Task.Run(async () =>
         {
-            await LoadAvailableModsAsync();
-            await Dispatcher.UIThread.InvokeAsync(RefreshUI);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to refresh mods after source update");
-        }
-    });
-}
+            try
+            {
+                await LoadAvailableModsAsync();
+                await Dispatcher.UIThread.InvokeAsync(RefreshUI);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to refresh mods after source update");
+            }
+        });
+    }
 
     [RelayCommand]
     public async Task ImportModList()
@@ -379,10 +379,10 @@ public partial class MainViewModel
         {
             Title = "Import Mod List",
             AllowMultiple = false,
-            FileTypeFilter = new[] 
-            { 
+            FileTypeFilter = new[]
+            {
                 new FilePickerFileType("Mod Library") { Patterns = new[] { "*.json" } },
-                FilePickerFileTypes.All 
+                FilePickerFileTypes.All
             }
         });
 
@@ -416,7 +416,7 @@ public partial class MainViewModel
             {
                 if (installedIds.Contains(snapshot.Id)) continue;
 
-                var targetMod = _availableMods.FirstOrDefault(m => 
+                var targetMod = _availableMods.FirstOrDefault(m =>
                     string.Equals(m.Id, snapshot.Id, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(m.Name, snapshot.Name, StringComparison.OrdinalIgnoreCase));
 

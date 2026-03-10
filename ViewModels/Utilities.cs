@@ -49,7 +49,7 @@ public partial class MainViewModel
         try
         {
             var logsPath = Path.Combine(AppContext.BaseDirectory, "logs");
-            
+
             if (!Directory.Exists(logsPath))
             {
                 Directory.CreateDirectory(logsPath);
@@ -86,7 +86,7 @@ public partial class MainViewModel
         try
         {
             var cachePath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "cache");
-            
+
             if (Directory.Exists(cachePath))
             {
                 Directory.Delete(cachePath, true);
@@ -156,7 +156,7 @@ public partial class MainViewModel
     private void OpenDetails(Mod? mod)
     {
         if (mod == null) return;
-        
+
         DetailsMod = mod;
         IsDetailsOpen = true;
     }

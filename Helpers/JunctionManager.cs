@@ -8,8 +8,8 @@ namespace Yellowcake.Helpers;
 
 public static class JunctionManager
 {
-    public static bool IsSupported => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || 
-                                       RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || 
+    public static bool IsSupported => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
+                                       RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
                                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
     public static void Create(string junctionPoint, string targetDir, bool overwrite = false)
@@ -59,7 +59,7 @@ public static class JunctionManager
                 {
                     File.Delete(junctionPoint);
                 }
-                
+
                 Log.Information("Removed junction/symlink: {Path}", junctionPoint);
             }
             else
@@ -84,7 +84,7 @@ public static class JunctionManager
                 var di = new DirectoryInfo(path);
                 return di.Attributes.HasFlag(FileAttributes.ReparsePoint);
             }
-            
+
             if (File.Exists(path))
             {
                 var fi = new FileInfo(path);
@@ -135,7 +135,7 @@ public static class JunctionManager
         try
         {
             using var process = Process.Start(psi);
-            if (process == null) 
+            if (process == null)
                 throw new InvalidOperationException("Failed to start the junction creation process.");
 
             process.WaitForExit();
@@ -143,9 +143,9 @@ public static class JunctionManager
             if (process.ExitCode != 0)
             {
                 var error = process.StandardError.ReadToEnd();
-                if (string.IsNullOrWhiteSpace(error)) 
+                if (string.IsNullOrWhiteSpace(error))
                     error = process.StandardOutput.ReadToEnd();
-                
+
                 throw new InvalidOperationException($"mklink failed with exit code {process.ExitCode}: {error.Trim()}");
             }
         }
@@ -171,7 +171,7 @@ public static class JunctionManager
         try
         {
             using var process = Process.Start(psi);
-            if (process == null) 
+            if (process == null)
                 throw new InvalidOperationException("Failed to start the symlink creation process.");
 
             process.WaitForExit();
@@ -179,9 +179,9 @@ public static class JunctionManager
             if (process.ExitCode != 0)
             {
                 var error = process.StandardError.ReadToEnd();
-                if (string.IsNullOrWhiteSpace(error)) 
+                if (string.IsNullOrWhiteSpace(error))
                     error = process.StandardOutput.ReadToEnd();
-                
+
                 throw new InvalidOperationException($"ln failed with exit code {process.ExitCode}: {error.Trim()}");
             }
         }

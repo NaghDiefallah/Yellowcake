@@ -30,7 +30,7 @@ public class EnhancedThumbnailCache
         _http = http;
         _cacheDirectory = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "cache", "thumbnails");
         Directory.CreateDirectory(_cacheDirectory);
-        
+
         _ = Task.Run(CleanOldCacheAsync);
     }
 
@@ -39,7 +39,7 @@ public class EnhancedThumbnailCache
         if (string.IsNullOrEmpty(url)) return GetPlaceholderImage();
 
         var cacheKey = GetCacheKey(url);
-        
+
         if (_memoryCache.TryGetValue(cacheKey, out var cached))
             return cached;
 
@@ -107,12 +107,12 @@ public class EnhancedThumbnailCache
             var bytes = await response.Content.ReadAsByteArrayAsync();
             using var stream = new MemoryStream(bytes);
             var bitmap = new Bitmap(stream);
-            
+
             if (lowQuality && (bitmap.PixelSize.Width > 400 || bitmap.PixelSize.Height > 400))
             {
                 return ResizeBitmap(bitmap, 400, 400);
             }
-            
+
             return bitmap;
         }
         catch (Exception ex)

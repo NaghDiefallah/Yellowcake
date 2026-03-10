@@ -339,12 +339,12 @@ del ""%~f0""";
         try
         {
             Log.Information("Checking for mod updates...");
-            
+
             int updateCount = 0;
 
             foreach (var installed in _installedMods)
             {
-                var remote = _allRemoteMods.FirstOrDefault(m => 
+                var remote = _allRemoteMods.FirstOrDefault(m =>
                     string.Equals(m.Id, installed.Id, StringComparison.OrdinalIgnoreCase));
 
                 if (remote != null && ModService.HasUpdate(installed, remote))
@@ -352,8 +352,8 @@ del ""%~f0""";
                     installed.HasUpdate = true;
                     installed.LatestVersion = remote.Version;
                     updateCount++;
-                    
-                    Log.Information("Update available: {ModName} {OldVer} -> {NewVer}", 
+
+                    Log.Information("Update available: {ModName} {OldVer} -> {NewVer}",
                         installed.Name, installed.Version, remote.Version);
                 }
                 else

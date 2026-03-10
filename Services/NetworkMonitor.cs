@@ -32,7 +32,7 @@ public class NetworkMonitor
 
     private NetworkMonitor()
     {
-        NetworkChange.NetworkAvailabilityChanged += (s, e) => 
+        NetworkChange.NetworkAvailabilityChanged += (s, e) =>
         {
             IsOnline = e.IsAvailable;
         };

@@ -129,7 +129,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         try
         {
             Log.Information("Loading BepInEx versions from GitHub...");
-            
+
             var versions = await _bepInExService.GetVersionListAsync();
 
             if (versions == null || !versions.Any())
@@ -147,9 +147,9 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
                     BepInExVersions.Add(version);
 
                 SelectedBepInExVersion = BepInExVersions.FirstOrDefault();
-                
+
                 InstallSelectedVersionCommand.NotifyCanExecuteChanged();
-                
+
                 Log.Information("Loaded {Count} BepInEx versions", versions.Count);
             });
 
@@ -198,11 +198,11 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
                 });
 
             Log.Information("BepInEx auto-installation completed successfully");
-            
+
             await RefreshUI();
             OnPropertyChanged(nameof(IsBepInstalled));
             GameStatus = "Ready";
-            
+
             NotificationService.Instance.Success($"BepInEx {SelectedBepInExVersion} installed successfully!");
         }
         catch (UnauthorizedAccessException ex)
@@ -233,7 +233,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         {
             await Task.Delay(2000);
             BepInExDownloadProgress = 0;
-            
+
             if (GameStatus.StartsWith("Error") || GameStatus.Contains("failed"))
             {
                 await Task.Delay(3000);
@@ -279,10 +279,10 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             Log.Information("BepInEx installation completed successfully");
 
             await RefreshUI();
-            
+
             OnPropertyChanged(nameof(IsBepInstalled));
             GameStatus = "Ready";
-            
+
             NotificationService.Instance.Success($"BepInEx {SelectedBepInExVersion} installed successfully!");
         }
         catch (UnauthorizedAccessException ex)
@@ -336,7 +336,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             BepInExDownloadProgress = 0;
             IsBusy = false;
             InstallSelectedVersionCommand.NotifyCanExecuteChanged();
-            
+
             if (GameStatus.StartsWith("Error"))
             {
                 await Task.Delay(3000);
@@ -349,8 +349,8 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     {
         try
         {
-            string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) 
-                ? "NuclearOption.exe" 
+            string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? "NuclearOption.exe"
                 : "NuclearOption";
 
             var steamPaths = new[]

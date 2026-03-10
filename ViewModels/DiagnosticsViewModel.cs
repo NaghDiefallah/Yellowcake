@@ -131,7 +131,7 @@ public partial class DiagnosticsViewModel : ObservableObject
 
             var path = Path.Combine(Path.GetTempPath(), $"yellowcake-diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
             await File.WriteAllTextAsync(path, report);
-            
+
             NotificationService.Instance.Success($"Diagnostics exported to {path}");
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
         }

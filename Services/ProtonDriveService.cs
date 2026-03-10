@@ -38,7 +38,7 @@ public class ProtonDriveService
     }
 
     public async Task<HttpResponseMessage> GetDownloadResponseAsync(
-        string url, 
+        string url,
         IProgress<long>? progress = null,
         CancellationToken ct = default)
     {
@@ -55,12 +55,12 @@ public class ProtonDriveService
             Log.Information("Downloading from Proton Drive: {ShareId}", shareId);
 
             var apiUrl = $"https://drive.proton.me/api/shares/urls/{shareId}";
-            
+
             var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
             request.Headers.Add("Accept", "application/json");
-            
+
             var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 Log.Warning("Proton Drive API returned {StatusCode}", response.StatusCode);
@@ -81,8 +81,8 @@ public class ProtonDriveService
 
             var downloadRequest = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
             var downloadResponse = await _httpClient.SendAsync(
-                downloadRequest, 
-                HttpCompletionOption.ResponseHeadersRead, 
+                downloadRequest,
+                HttpCompletionOption.ResponseHeadersRead,
                 ct
             );
 

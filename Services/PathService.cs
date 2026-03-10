@@ -121,7 +121,7 @@ public class PathService
             : Path.Combine(localAppData, "Yellowcake");
 
         var modsPath = Path.Combine(baseDataPath, "mods");
-        
+
         if (!Directory.Exists(modsPath))
         {
             try

@@ -27,8 +27,8 @@ public partial class PerformanceDashboardViewModel : ObservableObject
         foreach (var mod in _stats.TopMods)
         {
             mod.Rank = rank++;
-            mod.PercentOfMax = _stats.TopMods.Any() 
-                ? (double)mod.Count / _stats.TopMods.Max(m => m.Count) * 100 
+            mod.PercentOfMax = _stats.TopMods.Any()
+                ? (double)mod.Count / _stats.TopMods.Max(m => m.Count) * 100
                 : 0;
         }
     }
@@ -37,14 +37,14 @@ public partial class PerformanceDashboardViewModel : ObservableObject
     private void Refresh()
     {
         Stats = _tracker.GetStats();
-        
+
         // Update rankings
         int rank = 1;
         foreach (var mod in Stats.TopMods)
         {
             mod.Rank = rank++;
-            mod.PercentOfMax = Stats.TopMods.Any() 
-                ? (double)mod.Count / Stats.TopMods.Max(m => m.Count) * 100 
+            mod.PercentOfMax = Stats.TopMods.Any()
+                ? (double)mod.Count / Stats.TopMods.Max(m => m.Count) * 100
                 : 0;
         }
     }

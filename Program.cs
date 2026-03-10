@@ -17,20 +17,20 @@ class Program
         try
         {
             ConfigureLogging();
-            
+
             Log.Information("Starting Avalonia application...");
             Log.Debug("Platform: {Platform}", Environment.OSVersion);
-            
+
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
         {
             Log.Fatal(ex, "Application terminated unexpectedly");
-            
+
             // Cross-platform error handling
             HandleFatalError(ex);
-            
+
             Environment.Exit(1);
         }
         finally
@@ -63,7 +63,7 @@ class Program
             .CreateLogger();
 
         Log.Information("=== Starting ===");
-        Log.Information("Application Version: {Version}", 
+        Log.Information("Application Version: {Version}",
             System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
         Log.Information("OS: {OS}", Environment.OSVersion);
         Log.Information(".NET Version: {Version}", Environment.Version);
@@ -76,14 +76,14 @@ class Program
         try
         {
             Log.Debug("Configuring Avalonia AppBuilder...");
-            
+
             var builder = AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .WithInterFont()
                 .LogToTrace(Avalonia.Logging.LogEventLevel.Warning);
-            
+
             Log.Debug("Avalonia AppBuilder configured successfully");
-            
+
             return builder;
         }
         catch (Exception ex)
@@ -114,7 +114,7 @@ class Program
             """;
         // Write to console (cross-platform)
         Console.Error.WriteLine(errorMessage);
-        
+
         // Write to a crash report file
         try
         {
@@ -132,13 +132,13 @@ class Program
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return $"Windows {Environment.OSVersion.Version}";
-        
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return $"Linux {Environment.OSVersion.Version}";
-        
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             return $"macOS {Environment.OSVersion.Version}";
-        
+
         return $"Unknown ({RuntimeInformation.OSDescription})";
     }
 }

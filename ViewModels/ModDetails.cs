@@ -39,7 +39,7 @@ public partial class MainViewModel
     private void CloseModDetails()
     {
         IsDetailsOpen = false;
-        
+
         _ = Task.Delay(200).ContinueWith(_ =>
         {
             DetailsMod = null;
@@ -58,7 +58,7 @@ public partial class MainViewModel
             ModDependencies = ResolveDependencies(mod);
             ModConflicts = ResolveConflicts(mod);
             DependencyGraph = GenerateDependencyGraph(mod);
-            
+
             if (mod.FileSizeBytes <= 0)
             {
                 await mod.FetchFileSizeAsync(_shutdownCts.Token);
@@ -116,7 +116,7 @@ public partial class MainViewModel
     private List<Mod> ResolveDependencies(Mod mod)
     {
         var dependencies = mod.Dependencies;
-        
+
         if (dependencies == null || !dependencies.Any())
             return new List<Mod>();
 
@@ -124,10 +124,10 @@ public partial class MainViewModel
 
         foreach (var depId in dependencies)
         {
-            var depMod = _allRemoteMods.FirstOrDefault(m => 
+            var depMod = _allRemoteMods.FirstOrDefault(m =>
                 string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase));
 
-            depMod ??= _installedMods.FirstOrDefault(m => 
+            depMod ??= _installedMods.FirstOrDefault(m =>
                 string.Equals(m.Id, depId, StringComparison.OrdinalIgnoreCase));
 
             if (depMod != null)
@@ -174,7 +174,7 @@ public partial class MainViewModel
 
         foreach (var conflictId in modConflicts)
         {
-            var conflictMod = _installedMods.FirstOrDefault(m => 
+            var conflictMod = _installedMods.FirstOrDefault(m =>
                 string.Equals(m.Id, conflictId, StringComparison.OrdinalIgnoreCase));
 
             if (conflictMod != null)
@@ -183,7 +183,7 @@ public partial class MainViewModel
             }
             else
             {
-                var remoteMod = _allRemoteMods.FirstOrDefault(m => 
+                var remoteMod = _allRemoteMods.FirstOrDefault(m =>
                     string.Equals(m.Id, conflictId, StringComparison.OrdinalIgnoreCase));
 
                 if (remoteMod != null)
@@ -199,27 +199,27 @@ public partial class MainViewModel
     private string GenerateDependencyGraph(Mod mod)
     {
         var dependencies = mod.Dependencies;
-        
+
         if (dependencies == null || !dependencies.Any())
             return string.Empty;
 
         var graph = new System.Text.StringBuilder();
         graph.AppendLine("graph TD");
-        
+
         var rootId = SanitizeGraphId(mod.Name);
         graph.AppendLine($"    {rootId}[\"{EscapeGraphText(mod.Name)}\"]");
         graph.AppendLine($"    style {rootId} fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:#fff");
 
         foreach (var depId in dependencies)
         {
-            var dep = _allRemoteMods.FirstOrDefault(m => m.Id == depId) ?? 
+            var dep = _allRemoteMods.FirstOrDefault(m => m.Id == depId) ??
                      _installedMods.FirstOrDefault(m => m.Id == depId);
 
             if (dep != null)
             {
                 var depNodeId = SanitizeGraphId(dep.Name);
                 var statusColor = dep.IsInstalled ? "#10b981" : "#f59e0b";
-                
+
                 graph.AppendLine($"    {depNodeId}[\"{EscapeGraphText(dep.Name)}\"]");
                 graph.AppendLine($"    {rootId} --> {depNodeId}");
                 graph.AppendLine($"    style {depNodeId} fill:{statusColor},stroke:#333,color:#fff");

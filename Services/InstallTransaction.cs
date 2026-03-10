@@ -27,7 +27,7 @@ public class InstallTransaction : IDisposable
     {
         _tempDirectory = Path.Combine(Path.GetTempPath(), $"yellowcake-install-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDirectory);
-        
+
         Log.Information("Transaction started for {ModName}", _mod.Name);
         return Task.CompletedTask;
     }
@@ -47,7 +47,7 @@ public class InstallTransaction : IDisposable
             throw new InvalidOperationException("Transaction not started");
 
         var isValid = await Task.Run(() => _installService.VerifyInstallation(_mod));
-        
+
         if (!isValid)
         {
             throw new InvalidOperationException($"Verification failed for {_mod.Name}");
@@ -75,12 +75,12 @@ public class InstallTransaction : IDisposable
             }
 
             Directory.Move(_tempDirectory, targetPath);
-            
+
             _mod.IsInstalled = true;
             _db.Upsert("installed_mods", _mod);
 
             _isCommitted = true;
-            
+
             if (_backupDirectory != null && Directory.Exists(_backupDirectory))
             {
                 Directory.Delete(_backupDirectory, true);

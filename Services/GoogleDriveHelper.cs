@@ -10,7 +10,7 @@ public static class GoogleDriveHelper
 
     public static bool IsGoogleDriveUrl(string url)
     {
-        return !string.IsNullOrEmpty(url) && 
+        return !string.IsNullOrEmpty(url) &&
                (url.Contains("drive.google.com", StringComparison.OrdinalIgnoreCase) ||
                 url.Contains("docs.google.com", StringComparison.OrdinalIgnoreCase));
     }

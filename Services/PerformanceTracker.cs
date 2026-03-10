@@ -166,7 +166,7 @@ public class DownloadMetric
     public TimeSpan Duration { get; set; }
     public bool Success { get; set; }
     public double SpeedMBps { get; set; }
-    
+
     public double BytesDownloadedMB => BytesDownloaded / 1_048_576.0;
 }
 
@@ -185,11 +185,11 @@ public class PerformanceStats
     public List<OperationMetric> RecentOperations { get; set; } = new();
     public double OperationP50Ms { get; set; }
     public double OperationP95Ms { get; set; }
-    
-    public double SuccessRate => TotalDownloads > 0 
-        ? (double)SuccessfulDownloads / TotalDownloads * 100 
+
+    public double SuccessRate => TotalDownloads > 0
+        ? (double)SuccessfulDownloads / TotalDownloads * 100
         : 0;
-    
+
     public double TotalDataDownloadedGB => TotalDataDownloadedMB / 1024.0;
 }
 

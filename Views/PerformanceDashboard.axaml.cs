@@ -8,10 +8,10 @@ public partial class PerformanceDashboard : UserControl
     public PerformanceDashboard()
     {
         InitializeComponent();
-        
+
         // Initialize ViewModel
         DataContext = new PerformanceDashboardViewModel();
-        
+
         // Refresh stats when the control is loaded
         Loaded += (s, e) =>
         {

@@ -29,15 +29,15 @@ public class ManifestService
     public ManifestService(HttpClient httpClient)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        
+
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string cacheDir = Path.Combine(appData, "Yellowcake", "cache");
-        
+
         if (!Directory.Exists(cacheDir))
         {
             Directory.CreateDirectory(cacheDir);
         }
-        
+
         _cachePath = Path.Combine(cacheDir, "manifest_cache.json");
     }
 
@@ -54,7 +54,7 @@ public class ManifestService
             if (IsCacheFresh(out var cachedMods))
             {
                 Log.Information("[ManifestService] Using cached manifest ({Count} mods)", cachedMods.Count);
-                
+
                 _ = Task.Run(async () =>
                 {
                     try
@@ -100,24 +100,24 @@ public class ManifestService
         catch (OperationCanceledException)
         {
             Log.Information("[ManifestService] Manifest fetch cancelled");
-            
+
             if (TryLoadCache(out var cached))
             {
                 return cached;
             }
-            
+
             return new List<Mod>();
         }
         catch (Exception ex)
         {
             Log.Error(ex, "[ManifestService] Failed to fetch manifest");
-            
+
             if (TryLoadCache(out var cached))
             {
                 Log.Warning("[ManifestService] Returning stale cache after error ({Count} mods)", cached.Count);
                 return cached;
             }
-            
+
             return new List<Mod>();
         }
     }
@@ -228,7 +228,7 @@ public class ManifestService
             }
 
             var json = File.ReadAllText(_cachePath);
-            
+
             if (string.IsNullOrWhiteSpace(json))
             {
                 return false;
@@ -254,13 +254,13 @@ public class ManifestService
         catch (JsonException ex)
         {
             Log.Warning(ex, "[ManifestService] Failed to parse cache (corrupted?)");
-            
+
             try
             {
                 File.Delete(_cachePath);
             }
             catch { }
-            
+
             return false;
         }
         catch (Exception ex)
@@ -276,7 +276,7 @@ public class ManifestService
         {
             var json = JsonConvert.SerializeObject(mods, Formatting.Indented, JsonSettings);
             File.WriteAllText(_cachePath, json);
-            
+
             Log.Debug("[ManifestService] Saved {Count} mods to cache: {Path}", mods.Count, _cachePath);
         }
         catch (Exception ex)

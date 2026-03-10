@@ -23,7 +23,7 @@ public class ManifestServiceTests : IDisposable
         var handler = new StubHttpMessageHandler(_ => throw new InvalidOperationException("Should not call HTTP"));
         using var http = new HttpClient(handler);
         var sut = new ManifestService(http);
-      sut.ClearCache();
+        sut.ClearCache();
 
         var mods = await sut.FetchRemoteManifestAsync();
 
@@ -91,7 +91,7 @@ public class ManifestServiceTests : IDisposable
         using (var firstHttp = new HttpClient(firstHandler))
         {
             var warmup = new ManifestService(firstHttp) { TargetUrl = "https://example.test/manifest.json" };
-          warmup.ClearCache();
+            warmup.ClearCache();
             var warmupResult = await warmup.FetchRemoteManifestAsync();
             warmupResult.Should().HaveCount(1);
         }

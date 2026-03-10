@@ -16,8 +16,8 @@ namespace Yellowcake.Models;
 
 public partial class Mod : ObservableObject
 {
-    private static readonly HttpClient _httpClient = new(new HttpClientHandler 
-    { 
+    private static readonly HttpClient _httpClient = new(new HttpClientHandler
+    {
         AllowAutoRedirect = true,
         AutomaticDecompression = System.Net.DecompressionMethods.All
     })
@@ -279,17 +279,17 @@ public partial class Mod : ObservableObject
     {
         var nameUpper = Name?.ToUpperInvariant() ?? "";
         var descUpper = Description?.ToUpperInvariant() ?? "";
-        
+
         var hasVoiceTag = Tags?.Any(t => t.Contains("voice", StringComparison.OrdinalIgnoreCase)) ?? false;
-        var hasVoiceType = Category.Contains("voice", StringComparison.OrdinalIgnoreCase) || 
+        var hasVoiceType = Category.Contains("voice", StringComparison.OrdinalIgnoreCase) ||
                            Category.Contains("audio", StringComparison.OrdinalIgnoreCase);
-        
+
         IsVoicePack = hasVoiceTag || hasVoiceType;
-        
+
         IsLivery = Tags?.Any(t => t.Contains("livery", StringComparison.OrdinalIgnoreCase)) ?? false ||
                    Category.Equals("Livery", StringComparison.OrdinalIgnoreCase) ||
                    nameUpper.Contains("LIVERY") || nameUpper.Contains("SKIN") || nameUpper.Contains("PAINT");
-        
+
         IsMission = Tags?.Any(t => t.Contains("mission", StringComparison.OrdinalIgnoreCase)) ?? false ||
                     Category.Equals("Mission", StringComparison.OrdinalIgnoreCase) ||
                     nameUpper.Contains("MISSION") || nameUpper.Contains("CAMPAIGN");
@@ -389,7 +389,7 @@ public partial class Mod : ObservableObject
         if (string.IsNullOrWhiteSpace(Id)) return (false, "Mod ID is missing");
         if (string.IsNullOrWhiteSpace(Name)) return (false, "Mod name is missing");
         if (Artifacts == null || Artifacts.Count == 0) return (false, "No artifacts available");
-        
+
         var latest = LatestArtifact;
         if (latest == null) return (false, "No release artifact found");
         if (string.IsNullOrWhiteSpace(latest.DownloadUrl)) return (false, "Download URL is missing");
@@ -445,8 +445,8 @@ public partial class Mod : ObservableObject
         try
         {
             var cleaned = CleanVersion(versionString);
-            return System.Version.TryParse(cleaned, out var version) 
-                ? version 
+            return System.Version.TryParse(cleaned, out var version)
+                ? version
                 : new System.Version(0, 0, 0);
         }
         catch
@@ -458,7 +458,7 @@ public partial class Mod : ObservableObject
     private static string FormatFileSize(long bytes)
     {
         if (bytes <= 0) return "Unknown";
-        
+
         string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
         int suffixIndex = 0;
         double size = bytes;
@@ -469,8 +469,8 @@ public partial class Mod : ObservableObject
             suffixIndex++;
         }
 
-        return suffixIndex == 0 
-            ? $"{size:F0} {suffixes[suffixIndex]}" 
+        return suffixIndex == 0
+            ? $"{size:F0} {suffixes[suffixIndex]}"
             : $"{size:F2} {suffixes[suffixIndex]}";
     }
 

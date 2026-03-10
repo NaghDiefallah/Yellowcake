@@ -10,9 +10,9 @@ public partial class MainViewModel
     [NotifyCanExecuteChangedFor(nameof(InstallSelectedVersionCommand))]
     private string? _selectedBepInExVersion;
 
-    [ObservableProperty] 
+    [ObservableProperty]
     private ObservableCollection<string> _bepInExVersions = new();
 
-    [ObservableProperty] 
+    [ObservableProperty]
     private double _bepInExDownloadProgress;
 }

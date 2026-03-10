@@ -17,13 +17,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        
+
         AddHandler(DragDrop.DropEvent, Drop);
         AddHandler(DragDrop.DragOverEvent, DragOver);
 
         // Subscribe to search focus event
         DataContextChanged += OnDataContextChanged;
-        
+
         // CRITICAL FIX: Initialize NotificationService when window is loaded
         Opened += MainWindow_Opened;
     }
