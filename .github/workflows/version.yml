@@ -27,6 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
@@ -143,6 +144,13 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ steps.next.outputs.tag }}"
           git push origin "${{ steps.next.outputs.tag }}"
+
+      - name: Trigger Release workflow
+        if: steps.next.outputs.already_tagged != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run release.yml --ref main -f tag_name="${{ steps.next.outputs.tag }}"
 
       - name: Summary
         run: |
