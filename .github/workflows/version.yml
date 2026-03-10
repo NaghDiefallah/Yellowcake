@@ -1,0 +1,85 @@
+name: Version Tagger
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version segment to bump"
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - revision
+      prefix:
+        description: "Tag prefix"
+        required: false
+        default: v
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version tag
+        id: next
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          prefix="${{ github.event.inputs.prefix }}"
+          bump="${{ github.event.inputs.bump }}"
+
+          latest=$(git tag --list "${prefix}*" --sort=-v:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            latest="${prefix}0.0.0.0"
+          fi
+
+          version="${latest#${prefix}}"
+          IFS='.' read -r major minor patch revision <<< "$version"
+          major=${major:-0}
+          minor=${minor:-0}
+          patch=${patch:-0}
+          revision=${revision:-0}
+
+          case "$bump" in
+            major)
+              major=$((major + 1)); minor=0; patch=0; revision=0 ;;
+            minor)
+              minor=$((minor + 1)); patch=0; revision=0 ;;
+            patch)
+              patch=$((patch + 1)); revision=0 ;;
+            revision)
+              revision=$((revision + 1)) ;;
+            *)
+              echo "Unknown bump type: $bump" >&2
+              exit 1 ;;
+          esac
+
+          new_tag="${prefix}${major}.${minor}.${patch}.${revision}"
+
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "tag=$new_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.next.outputs.tag }}"
+          git push origin "${{ steps.next.outputs.tag }}"
+
+      - name: Summary
+        run: |
+          echo "Previous: ${{ steps.next.outputs.latest }}"
+          echo "Created : ${{ steps.next.outputs.tag }}"

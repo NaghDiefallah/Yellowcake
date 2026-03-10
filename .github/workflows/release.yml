@@ -23,8 +23,48 @@ env:
   SOLUTION_FILE: Yellowcake.slnx
 
 jobs:
+  version:
+    name: Resolve Version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.ver.outputs.tag }}
+      semver: ${{ steps.ver.outputs.semver }}
+      assembly: ${{ steps.ver.outputs.assembly }}
+      file: ${{ steps.ver.outputs.file }}
+      informational: ${{ steps.ver.outputs.informational }}
+
+    steps:
+      - name: Resolve tag and version
+        id: ver
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            tag="${{ github.event.inputs.tag_name }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          ver="${tag#v}"
+          IFS='.' read -r a b c d <<< "$ver"
+
+          a=${a:-0}
+          b=${b:-0}
+          c=${c:-0}
+          d=${d:-0}
+
+          semver="${a}.${b}.${c}"
+          assembly="${a}.${b}.${c}.${d}"
+          informational="${semver}+${tag}.${GITHUB_SHA::7}"
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "semver=$semver" >> "$GITHUB_OUTPUT"
+          echo "assembly=$assembly" >> "$GITHUB_OUTPUT"
+          echo "file=$assembly" >> "$GITHUB_OUTPUT"
+          echo "informational=$informational" >> "$GITHUB_OUTPUT"
+
   verify:
     name: Verify Tests
+    needs: version
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +85,7 @@ jobs:
         run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
 
       - name: Build
-        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo
+        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo /p:Version=${{ needs.version.outputs.semver }} /p:AssemblyVersion=${{ needs.version.outputs.assembly }} /p:FileVersion=${{ needs.version.outputs.file }} /p:InformationalVersion=${{ needs.version.outputs.informational }}
 
       - name: Test
         run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --nologo --logger "trx;LogFileName=test-results.trx" --results-directory TestResults/release
@@ -61,7 +101,7 @@ jobs:
 
   publish:
     name: Publish (${{ matrix.rid }})
-    needs: verify
+    needs: [version, verify]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -102,7 +142,7 @@ jobs:
         run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
 
       - name: Publish
-        run: dotnet publish Yellowcake.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:ContinuousIntegrationBuild=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --nologo -o publish/${{ matrix.rid }}
+        run: dotnet publish Yellowcake.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:ContinuousIntegrationBuild=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --nologo -o publish/${{ matrix.rid }} /p:Version=${{ needs.version.outputs.semver }} /p:AssemblyVersion=${{ needs.version.outputs.assembly }} /p:FileVersion=${{ needs.version.outputs.file }} /p:InformationalVersion=${{ needs.version.outputs.informational }}
 
       - name: Validate output binary
         shell: pwsh
@@ -138,7 +178,7 @@ jobs:
 
   deploy:
     name: Deploy GitHub Release
-    needs: publish
+    needs: [version, publish]
     runs-on: ubuntu-latest
 
     steps:
@@ -146,15 +186,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Resolve tag name
-        id: tag
-        run: |
-          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
-            echo "value=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Verify package checksums
         run: |
@@ -168,7 +199,8 @@ jobs:
           set -euo pipefail
           {
             echo '{'
-            echo '  "tag": "${{ steps.tag.outputs.value }}",'
+            echo '  "tag": "${{ needs.version.outputs.tag }}",'
+            echo '  "version": "${{ needs.version.outputs.semver }}",'
             echo '  "generatedAtUtc": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",'
             echo '  "assets": ['
 
@@ -199,8 +231,8 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.value }}
-          name: Release ${{ steps.tag.outputs.value }}
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Release ${{ needs.version.outputs.tag }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |

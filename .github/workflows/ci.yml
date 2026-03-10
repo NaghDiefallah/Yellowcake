@@ -52,8 +52,20 @@ jobs:
       - name: Restore
         run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
 
+      - name: Compute CI version metadata
+        id: version
+        shell: bash
+        run: |
+          ci_version="0.0.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          semver="0.0.${GITHUB_RUN_NUMBER}"
+          info="${semver}+ci.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}.${GITHUB_SHA::7}"
+          echo "assembly=${ci_version}" >> "$GITHUB_OUTPUT"
+          echo "file=${ci_version}" >> "$GITHUB_OUTPUT"
+          echo "semver=${semver}" >> "$GITHUB_OUTPUT"
+          echo "info=${info}" >> "$GITHUB_OUTPUT"
+
       - name: Build
-        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo -warnaserror
+        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo -warnaserror /p:Version=${{ steps.version.outputs.semver }} /p:AssemblyVersion=${{ steps.version.outputs.assembly }} /p:FileVersion=${{ steps.version.outputs.file }} /p:InformationalVersion=${{ steps.version.outputs.info }}
 
       - name: Verify formatting
         if: runner.os == 'Linux'
@@ -113,8 +125,20 @@ jobs:
       - name: Restore
         run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
 
+      - name: Compute CI version metadata
+        id: version
+        shell: bash
+        run: |
+          ci_version="0.0.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          semver="0.0.${GITHUB_RUN_NUMBER}"
+          info="${semver}+ci.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}.${GITHUB_SHA::7}"
+          echo "assembly=${ci_version}" >> "$GITHUB_OUTPUT"
+          echo "file=${ci_version}" >> "$GITHUB_OUTPUT"
+          echo "semver=${semver}" >> "$GITHUB_OUTPUT"
+          echo "info=${info}" >> "$GITHUB_OUTPUT"
+
       - name: Publish linux-x64
-        run: dotnet publish Yellowcake.csproj -c Release -r linux-x64 --self-contained true -p:ContinuousIntegrationBuild=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --nologo -o publish/linux-x64
+        run: dotnet publish Yellowcake.csproj -c Release -r linux-x64 --self-contained true -p:ContinuousIntegrationBuild=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --nologo -o publish/linux-x64 /p:Version=${{ steps.version.outputs.semver }} /p:AssemblyVersion=${{ steps.version.outputs.assembly }} /p:FileVersion=${{ steps.version.outputs.file }} /p:InformationalVersion=${{ steps.version.outputs.info }}
 
       - name: Smoke test executable exists
         run: test -f publish/linux-x64/Yellowcake

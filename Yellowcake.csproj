@@ -15,9 +15,10 @@
 		<TrimMode>link</TrimMode>
 
 		<DebugType>embedded</DebugType>
-		<Version>1.2.8.0</Version>
-		<AssemblyVersion>1.2.8.0</AssemblyVersion>
-		<FileVersion>1.2.8.0</FileVersion>
+		<Version Condition="'$(Version)'==''">0.0.0-local</Version>
+		<AssemblyVersion Condition="'$(AssemblyVersion)'==''">0.0.0.0</AssemblyVersion>
+		<FileVersion Condition="'$(FileVersion)'==''">0.0.0.0</FileVersion>
+		<InformationalVersion Condition="'$(InformationalVersion)'==''">0.0.0-local</InformationalVersion>
 		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 	</PropertyGroup>
 
