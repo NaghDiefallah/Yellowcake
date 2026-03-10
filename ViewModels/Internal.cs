@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -49,6 +50,8 @@ public partial class MainViewModel
         _isFiltering = true;
         OnPropertyChanged(nameof(IsFiltering));
 
+        var sw = Stopwatch.StartNew();
+
         try
         {
             var result = await Task.Run(() =>
@@ -72,9 +75,10 @@ public partial class MainViewModel
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(m =>
-                        (m.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Authors?.Any(a => a?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ?? false) ||
-                        (m.Tags?.Any(t => t?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ?? false));
+                    {
+                        if (string.IsNullOrEmpty(m.Id)) return false;
+                        return _searchIndex.TryGetValue(m.Id, out var indexed) && indexed.Contains(search, StringComparison.OrdinalIgnoreCase);
+                    });
                 }
 
                 if (token.IsCancellationRequested) return Enumerable.Empty<Mod>();
@@ -94,13 +98,10 @@ public partial class MainViewModel
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                if (_availableMods.SequenceEqual(result)) return;
-
-                _availableMods.Clear();
-                foreach (var mod in result) _availableMods.Add(mod);
+                ApplyAvailableModsDelta(result);
             });
 
-            _ = Task.Run(() => FetchMissingFileSizesAsync(result.Take(20).ToList(), token));
+            _ = Task.Run(() => FetchMissingFileSizesAsync(result.Take(24).ToList(), token));
         }
         catch (OperationCanceledException)
         {
@@ -108,6 +109,8 @@ public partial class MainViewModel
         }
         finally
         {
+            sw.Stop();
+            _performanceTracker.RecordOperation("ApplyFilters", sw.Elapsed, true);
             _isFiltering = false;
             OnPropertyChanged(nameof(IsFiltering));
         }
@@ -115,27 +118,31 @@ public partial class MainViewModel
 
     private async Task FetchMissingFileSizesAsync(List<Mod> mods, CancellationToken ct)
     {
-        foreach (var mod in mods)
-        {
-            if (ct.IsCancellationRequested) break;
-            
-            if (mod.FileSizeBytes <= 0)
+        using var semaphore = new SemaphoreSlim(4, 4);
+        var tasks = mods
+            .Where(m => m.FileSizeBytes <= 0)
+            .Select(async mod =>
             {
+                await semaphore.WaitAsync(ct);
                 try
                 {
                     await mod.FetchFileSizeAsync(ct);
-                    await Task.Delay(100, ct);
                 }
                 catch (OperationCanceledException)
                 {
-                    break;
                 }
                 catch (Exception ex)
                 {
                     Log.Debug(ex, "Failed to fetch size for {Mod}", mod.Name);
                 }
-            }
-        }
+                finally
+                {
+                    semaphore.Release();
+                }
+            })
+            .ToList();
+
+        await Task.WhenAll(tasks);
     }
 
     [RelayCommand]
@@ -177,6 +184,7 @@ public partial class MainViewModel
 
     public async Task RefreshUI()
     {
+        var sw = Stopwatch.StartNew();
         var installed = _modService.GetInstalledMods();
         var gameDetected = !string.IsNullOrEmpty(_gamePath) && _gamePath != "Not Set";
         var bepInstalled = gameDetected && _modService.IsBepInExInstalled();
@@ -195,6 +203,8 @@ public partial class MainViewModel
             OnPropertyChanged(nameof(IsBepInstalled));
             UpdateGameStatus(gameDetected, bepInstalled);
         });
+
+        _performanceTracker.RecordOperation("RefreshUI", sw.Elapsed, true);
     }
 
     private void UpdateGameStatus(bool detected, bool modded)
@@ -207,6 +217,25 @@ public partial class MainViewModel
 
     private async Task SyncInstalledStates()
     {
+        var reconciliation = _modService.ReconcileInstalledModsWithDisk(_allRemoteMods);
+
+        if (reconciliation.TotalChanges > 0)
+        {
+            Log.Information(
+                "Reconciled installed mods with disk. Discovered: {Discovered}, Updated: {Updated}, Removed: {Removed}",
+                reconciliation.Discovered,
+                reconciliation.Updated,
+                reconciliation.Removed);
+
+            var now = DateTime.UtcNow;
+            if ((now - _lastReconciliationNoticeUtc).TotalSeconds >= 30)
+            {
+                NotificationService.Instance.Info(
+                    $"Synced external mod changes: +{reconciliation.Discovered} discovered, ~{reconciliation.Updated} updated, -{reconciliation.Removed} removed.");
+                _lastReconciliationNoticeUtc = now;
+            }
+        }
+
         var localMods = _modService.GetInstalledMods().ToDictionary(m => m.Id);
 
         foreach (var remote in _allRemoteMods)
@@ -257,6 +286,7 @@ public partial class MainViewModel
 
     private async Task LoadAvailableModsAsync()
     {
+        var sw = Stopwatch.StartNew();
         try
         {
             _isLoading = true;
@@ -270,18 +300,16 @@ public partial class MainViewModel
                 mod.FinalizeFromManifest();
             }
 
+            RebuildIndexes(_allRemoteMods);
             await SyncInstalledStates();
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                _availableMods.Clear();
-                foreach (var mod in _allRemoteMods)
-                {
-                    _availableMods.Add(mod);
-                }
+                ApplyAvailableModsDelta(_allRemoteMods);
             });
 
             Log.Information("Loaded {Count} mods", mods.Count);
+            _performanceTracker.RecordOperation("LoadAvailableMods", sw.Elapsed, true);
         }
         catch (Exception ex)
         {
@@ -289,11 +317,63 @@ public partial class MainViewModel
             _gameStatus = "Sync Error";
             OnPropertyChanged(nameof(GameStatus));
             NotificationService.Instance.Error("Failed to load mod list");
+            _performanceTracker.RecordOperation("LoadAvailableMods", sw.Elapsed, false);
         }
         finally
         {
             _isLoading = false;
             OnPropertyChanged(nameof(IsLoading));
+        }
+    }
+
+    private void RebuildIndexes(List<Mod> mods)
+    {
+        _remoteModIndex = mods
+            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
+
+        _searchIndex = mods
+            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .ToDictionary(
+                m => m.Id,
+                m => string.Join(' ', new[]
+                {
+                    m.Name ?? string.Empty,
+                    string.Join(' ', m.Authors ?? new List<string>()),
+                    string.Join(' ', m.Tags ?? new List<string>())
+                }).ToLowerInvariant(),
+                StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void ApplyAvailableModsDelta(IEnumerable<Mod> incoming)
+    {
+        var incomingList = incoming.ToList();
+
+        if (_availableMods.Count == incomingList.Count)
+        {
+            var sameOrder = true;
+            for (var i = 0; i < _availableMods.Count; i++)
+            {
+                var leftId = _availableMods[i].Id;
+                var rightId = incomingList[i].Id;
+                if (!string.Equals(leftId, rightId, StringComparison.OrdinalIgnoreCase))
+                {
+                    sameOrder = false;
+                    break;
+                }
+            }
+
+            if (sameOrder)
+            {
+                return;
+            }
+        }
+
+        _availableMods.Clear();
+        foreach (var mod in incomingList)
+        {
+            _availableMods.Add(mod);
         }
     }
 

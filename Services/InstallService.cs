@@ -48,15 +48,41 @@ public class InstallService
             }
 
             using var archive = ArchiveFactory.Open(archivePath);
-            
-            var entries = archive.Entries.Where(e => !e.IsDirectory).ToList();
-            Log.Debug("[InstallService] Found {Count} files to extract", entries.Count);
+
+            var entries = archive.Entries
+                .Where(e => !e.IsDirectory)
+                .Select(e => new
+                {
+                    Entry = e,
+                    NormalizedKey = NormalizeArchiveEntryKey(e.Key)
+                })
+                .Where(e => !string.IsNullOrWhiteSpace(e.NormalizedKey))
+                .ToList();
+
+            var sharedRoot = GetSharedRootDirectory(entries.Select(e => e.NormalizedKey!));
+            var fullTargetRoot = Path.GetFullPath(targetPath);
+
+            Log.Debug("[InstallService] Found {Count} files to extract (shared root: {Root})", entries.Count, sharedRoot ?? "none");
 
             foreach (var entry in entries)
             {
                 ct.ThrowIfCancellationRequested();
 
-                var destinationPath = Path.Combine(targetPath, entry.Key);
+                var relativePath = StripSharedRoot(entry.NormalizedKey!, sharedRoot);
+                if (string.IsNullOrWhiteSpace(relativePath))
+                {
+                    continue;
+                }
+
+                var safeRelativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+                var destinationPath = Path.GetFullPath(Path.Combine(targetPath, safeRelativePath));
+
+                if (!destinationPath.StartsWith(fullTargetRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Warning("[InstallService] Skipping suspicious archive entry path: {EntryPath}", entry.NormalizedKey);
+                    continue;
+                }
+
                 var destinationDir = Path.GetDirectoryName(destinationPath);
 
                 if (!string.IsNullOrEmpty(destinationDir))
@@ -64,7 +90,7 @@ public class InstallService
                     Directory.CreateDirectory(destinationDir);
                 }
 
-                entry.WriteToFile(destinationPath, new ExtractionOptions
+                entry.Entry.WriteToFile(destinationPath, new ExtractionOptions
                 {
                     ExtractFullPath = true,
                     Overwrite = true
@@ -90,6 +116,60 @@ public class InstallService
             throw new InvalidOperationException(
                 "Failed to extract archive. The file may be corrupted or not a valid ZIP file.", ex);
         }
+    }
+
+    private static string NormalizeArchiveEntryKey(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return string.Empty;
+        }
+
+        return key.Replace('\\', '/').Trim().TrimStart('/');
+    }
+
+    private static string? GetSharedRootDirectory(System.Collections.Generic.IEnumerable<string> keys)
+    {
+        string? root = null;
+
+        foreach (var key in keys)
+        {
+            var separatorIndex = key.IndexOf('/');
+            if (separatorIndex <= 0)
+            {
+                return null;
+            }
+
+            var segment = key[..separatorIndex];
+            if (string.IsNullOrWhiteSpace(root))
+            {
+                root = segment;
+                continue;
+            }
+
+            if (!string.Equals(root, segment, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+        }
+
+        return root;
+    }
+
+    private static string StripSharedRoot(string path, string? sharedRoot)
+    {
+        if (string.IsNullOrWhiteSpace(sharedRoot))
+        {
+            return path;
+        }
+
+        var prefix = sharedRoot + "/";
+        if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return path[prefix.Length..];
+        }
+
+        return path;
     }
 
     public async Task InstallModAsync(Mod mod, string archivePath, CancellationToken ct = default)
@@ -164,6 +244,12 @@ public class InstallService
         var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins", mod.Id);
         Log.Debug("[InstallService] Plugin will install to: {Path}", pluginsDir);
         return pluginsDir;
+    }
+
+    public string GetExpectedInstallPath(Mod mod)
+    {
+        if (mod == null) throw new ArgumentNullException(nameof(mod));
+        return DetermineInstallPath(mod);
     }
 
     public bool VerifyInstallation(Mod mod)

@@ -11,9 +11,11 @@ namespace Yellowcake.Services;
 public class DownloadQueue
 {
     private readonly SemaphoreSlim _semaphore;
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _hostSemaphores = new();
     private readonly ConcurrentDictionary<string, DownloadTask> _activeTasks = new();
-    private readonly ConcurrentQueue<DownloadTask> _pendingTasks = new();
+    private readonly ConcurrentDictionary<string, DownloadTask> _pendingTasks = new();
     private readonly int _maxParallel;
+    private readonly int _maxPerHost;
     private long _totalBytesDownloaded;
     private long _estimatedTotalBytes;
 
@@ -29,33 +31,50 @@ public class DownloadQueue
     public event EventHandler<DownloadQueueEventArgs>? DownloadFailed;
     public event EventHandler? QueueChanged;
 
-    public DownloadQueue(int maxParallel = 4)
+    public DownloadQueue(int maxParallel = 4, int maxPerHost = 2)
     {
         _maxParallel = maxParallel;
+        _maxPerHost = Math.Max(1, maxPerHost);
         _semaphore = new SemaphoreSlim(maxParallel, maxParallel);
     }
 
     public async Task<T> EnqueueAsync<T>(
         string taskId,
         Func<IProgress<double>, CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken,
         long estimatedBytes = 0,
-        int priority = 0)
+        int priority = 0,
+        Uri? resourceUri = null)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var task = new DownloadTask
         {
             Id = taskId,
             EstimatedBytes = estimatedBytes,
-            Priority = priority
+            Priority = priority,
+            CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
         };
 
-        _pendingTasks.Enqueue(task);
+        _pendingTasks[taskId] = task;
         Interlocked.Add(ref _estimatedTotalBytes, estimatedBytes);
         QueueChanged?.Invoke(this, EventArgs.Empty);
 
-        await _semaphore.WaitAsync();
+        var acquiredGlobal = false;
+        SemaphoreSlim? hostSemaphore = null;
 
         try
         {
+            await _semaphore.WaitAsync(cancellationToken);
+            acquiredGlobal = true;
+
+            if (resourceUri?.Host is { Length: > 0 } host)
+            {
+                hostSemaphore = _hostSemaphores.GetOrAdd(host, _ => new SemaphoreSlim(_maxPerHost, _maxPerHost));
+                await hostSemaphore.WaitAsync(cancellationToken);
+            }
+
+            _pendingTasks.TryRemove(taskId, out _);
             _activeTasks[taskId] = task;
             DownloadStarted?.Invoke(this, new DownloadQueueEventArgs { TaskId = taskId });
 
@@ -63,12 +82,12 @@ public class DownloadQueue
             {
                 task.Progress = p;
                 var downloaded = (long)(estimatedBytes * p / 100);
-                Interlocked.Exchange(ref _totalBytesDownloaded,
-                    _totalBytesDownloaded - task.BytesDownloaded + downloaded);
+                var delta = downloaded - task.BytesDownloaded;
+                Interlocked.Add(ref _totalBytesDownloaded, delta);
                 task.BytesDownloaded = downloaded;
             });
 
-            var result = await operation(progress, CancellationToken.None);
+            var result = await operation(progress, task.CancellationTokenSource.Token);
 
             DownloadCompleted?.Invoke(this, new DownloadQueueEventArgs { TaskId = taskId });
             return result;
@@ -85,8 +104,39 @@ public class DownloadQueue
         }
         finally
         {
+            _pendingTasks.TryRemove(taskId, out _);
             _activeTasks.TryRemove(taskId, out _);
-            _semaphore.Release();
+
+            var remainingEstimated = Interlocked.Add(ref _estimatedTotalBytes, -task.EstimatedBytes);
+            if (remainingEstimated < 0)
+            {
+                Interlocked.Exchange(ref _estimatedTotalBytes, 0);
+            }
+
+            var remainingDownloaded = Interlocked.Add(ref _totalBytesDownloaded, -task.BytesDownloaded);
+            if (remainingDownloaded < 0)
+            {
+                Interlocked.Exchange(ref _totalBytesDownloaded, 0);
+            }
+
+            try
+            {
+                task.CancellationTokenSource?.Dispose();
+            }
+            catch
+            {
+            }
+
+            if (hostSemaphore != null)
+            {
+                hostSemaphore.Release();
+            }
+
+            if (acquiredGlobal)
+            {
+                _semaphore.Release();
+            }
+
             QueueChanged?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -122,7 +172,7 @@ public class DownloadQueue
     }
 
     public List<DownloadTask> GetActiveTasks() => _activeTasks.Values.ToList();
-    public List<DownloadTask> GetPendingTasks() => _pendingTasks.ToList();
+    public List<DownloadTask> GetPendingTasks() => _pendingTasks.Values.ToList();
 
     public void ClearCompleted()
     {

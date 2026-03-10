@@ -33,7 +33,6 @@
           <MenuItem Header="Update" Command="{Binding UpdateModCommand}" CommandParameter="{Binding SelectedMod}" IsVisible="{Binding SelectedMod.HasUpdate}"/>
           <MenuItem Header="Uninstall" Command="{Binding UninstallModCommand}" CommandParameter="{Binding SelectedMod}"/>
           <Separator/>
-          <MenuItem Header="Open Folder" Command="{Binding OpenModFolderCommand}" CommandParameter="{Binding SelectedMod}"/>
           <MenuItem Header="View Details" Command="{Binding OpenDetailsCommand}" CommandParameter="{Binding SelectedMod}"/>
           <Separator/>
           <MenuItem Header="Verify Integrity" Command="{Binding VerifyModCommand}" CommandParameter="{Binding SelectedMod}"/>

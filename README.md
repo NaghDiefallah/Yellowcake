@@ -25,7 +25,7 @@ A powerful, modern desktop application for managing mods in Nuclear Option. Buil
 ### 📦 Advanced Mod Management
 
 - **Local Mod Installation** - Import mods from ZIP files or individual DLLs
-- **Custom Manifest Support** - Switch between multiple mod repositories
+- **Official Manifest Source** - Uses the NOMNOM manifest endpoint
 - **Mod Library Sync** - Share and restore mod configurations via sync codes
 - **Update Detection** - Automatic notification when mod updates are available
 - **Version Control** - Track installed mod versions and update history

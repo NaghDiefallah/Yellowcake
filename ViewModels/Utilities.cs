@@ -85,7 +85,7 @@ public partial class MainViewModel
     {
         try
         {
-            var cachePath = Path.Combine(AppContext.BaseDirectory, "cache");
+            var cachePath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "cache");
             
             if (Directory.Exists(cachePath))
             {

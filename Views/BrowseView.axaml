@@ -234,9 +234,7 @@
 													</ItemsControl.ItemsPanel>
 													<ItemsControl.ItemTemplate>
 														<DataTemplate>
-															<TextBlock FontSize="11" Foreground="{DynamicResource SubTextBrush}">
-																<Run Text="{Binding}"/><Run Text=", " x:Name="Separator"/>
-															</TextBlock>
+															<TextBlock FontSize="11" Foreground="{DynamicResource SubTextBrush}" Text="{Binding}"/>
 														</DataTemplate>
 													</ItemsControl.ItemTemplate>
 												</ItemsControl>

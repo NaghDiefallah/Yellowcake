@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Yellowcake.Models;
@@ -22,82 +23,86 @@ public partial class MainViewModel
 {
     [ObservableProperty] private double _downloadProgress;
     [ObservableProperty] private bool _isDownloading;
-    private bool _isCheckingUpdates;
+    private volatile bool _isCheckingUpdates;
 
     [RelayCommand]
     private void CancelBusy()
     {
+        foreach (var cts in _activeDownloads.Values)
+        {
+            try { cts.Cancel(); } catch { }
+        }
         IsBusy = false;
-        // Logic to stop active tasks can be added here
+        GameStatus = "Cancelled";
+        Log.Information("User cancelled all active downloads ({Count} task(s))", _activeDownloads.Count);
     }
 
     [RelayCommand]
     public async Task UpdateMod(Mod? mod)
     {
-        if (mod == null || mod.IsDownloading) return;
-
-        try
+        if (mod == null || mod.IsDownloading)
         {
-            mod.IsDownloading = true;
-            mod.DownloadProgress = 0;
-            GameStatus = $"Updating: {mod.Name}";
-
-            var remoteMod = _allRemoteMods.FirstOrDefault(m => m.Id == mod.Id);
-            if (remoteMod == null)
-            {
-                Log.Warning("Update target {ModId} missing from manifest", mod.Id);
-                GameStatus = "Mod not in manifest";
-                return;
-            }
-
-            // Use the correct async API and provide a CancellationToken
-            await _modService.DownloadAndInstallModAsync(remoteMod, null, _allRemoteMods, CancellationToken.None);
-
-            mod.HasUpdate = false;
-            mod.InstalledVersionString = remoteMod.Version;
-
-            _db.Upsert("addons", mod);
-
-            Log.Information("Updated {ModName} to {Version}", mod.Name, mod.Version);
-
-            await RefreshUI();
-            GameStatus = "Ready";
+            return;
         }
-        catch (Exception ex)
+
+        if (!_remoteModIndex.TryGetValue(mod.Id, out var remoteMod))
         {
-            Log.Error(ex, "Update failed for {ModName}", mod.Name);
-            GameStatus = "Update Error";
-            NotificationService.Instance.Error($"Failed to update {mod.Name}");
+            Log.Warning("Update target {ModId} missing from manifest", mod.Id);
+            GameStatus = "Mod not in manifest";
+            return;
         }
-        finally
-        {
-            mod.IsDownloading = false;
-            mod.DownloadProgress = 0;
-        }
+
+        GameStatus = $"Updating: {mod.Name}";
+        await DownloadMod(remoteMod);
+        await SyncInstalledStates();
+        await RefreshUI();
+        GameStatus = "Ready";
     }
 
     [RelayCommand]
     public async Task UpdateAllMods()
     {
         var updates = InstalledMods.Where(m => m.HasUpdate).ToList();
-        if (updates.Count == 0) return;
-
-        int successCount = 0;
-        foreach (var mod in updates)
+        if (updates.Count == 0)
         {
-            try
-            {
-                await UpdateMod(mod);
-                successCount++;
-            }
-            catch
-            {
-                continue;
-            }
+            return;
         }
 
-        NotificationService.Instance.Success($"Successfully updated {successCount} mods.");
+        var remoteTargets = updates
+            .Where(m => !string.IsNullOrWhiteSpace(m.Id) && _remoteModIndex.ContainsKey(m.Id))
+            .Select(m => _remoteModIndex[m.Id])
+            .ToList();
+
+        if (remoteTargets.Count == 0)
+        {
+            NotificationService.Instance.Warning("No update targets were found in the current manifest.");
+            return;
+        }
+
+        var total = remoteTargets.Count;
+        Interlocked.Add(ref _activeBulkDownloads, total);
+        GameStatus = $"Updating {total} mod(s)...";
+
+        var tasks = remoteTargets.Select(async m =>
+        {
+            try { await DownloadMod(m); }
+            finally
+            {
+                var remaining = Interlocked.Decrement(ref _activeBulkDownloads);
+                if (remaining <= 0)
+                    GameStatus = "Ready";
+            }
+        }).ToList();
+
+        await Task.WhenAll(tasks);
+
+        await SyncInstalledStates();
         await RefreshUI();
+
+        var remainingUpdates = InstalledMods.Count(m => m.HasUpdate);
+        var updatedCount = total - remainingUpdates;
+        NotificationService.Instance.Success($"Update pass complete. Updated {Math.Max(updatedCount, 0)} mod(s).");
+        GameStatus = "Ready";
     }
 
     [RelayCommand]
@@ -131,14 +136,13 @@ public partial class MainViewModel
             CanCancel = false;
             BusyMessage = "Preparing download...";
 
-            using (var client = new HttpClient())
-            using (var response = await client.GetAsync(asset.BrowserDownloadUrl, HttpCompletionOption.ResponseHeadersRead))
+            using (var response = await _http.GetAsync(asset.BrowserDownloadUrl, HttpCompletionOption.ResponseHeadersRead))
             {
                 response.EnsureSuccessStatusCode();
                 var totalBytes = response.Content.Headers.ContentLength ?? -1L;
 
                 using (var contentStream = await response.Content.ReadAsStreamAsync())
-                using (var fileStream = new FileStream(downloadPath, System.IO.FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                await using (var fileStream = new FileStream(downloadPath, System.IO.FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
                     var buffer = new byte[8192];
                     long totalRead = 0;
@@ -214,11 +218,8 @@ del ""%~f0""";
 
         try
         {
-            var latestRelease = await _gh.Repository.Release.GetLatest("NaghDiefallah", "Yellowcake");
-
-            string remoteTag = latestRelease.TagName.Trim().TrimStart('v', 'V');
-
-            if (!Version.TryParse(remoteTag, out var latest) || !Version.TryParse(CurrentVersion, out var current))
+            var latest = await GetRemoteVersionAsync();
+            if (latest == null || !Version.TryParse(CurrentVersion, out var current))
             {
                 return;
             }
@@ -231,7 +232,7 @@ del ""%~f0""";
                 {
                     var box = MessageBoxManager.GetMessageBoxStandard(
                         "Update Available",
-                        $"A new version (v{latest}) is available! Would you like to download and install it now?",
+                        $"A new version (v{latest}) is available. Open the version endpoint now?",
                         ButtonEnum.YesNo,
                         Icon.Info);
 
@@ -240,7 +241,11 @@ del ""%~f0""";
 
                 if (result == ButtonResult.Yes)
                 {
-                    await DownloadAndApplyUpdate(latestRelease);
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = OfficialVersionUrl,
+                        UseShellExecute = true
+                    });
                 }
             }
         }
@@ -257,6 +262,70 @@ del ""%~f0""";
                 IsBusy = false;
             }
         }
+    }
+
+    private async Task<Version?> GetRemoteVersionAsync()
+    {
+        try
+        {
+            var payload = await _http.GetStringAsync(OfficialVersionUrl);
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return null;
+            }
+
+            var raw = payload.Trim();
+
+            if (raw.StartsWith("\"", StringComparison.Ordinal) && raw.EndsWith("\"", StringComparison.Ordinal))
+            {
+                var value = JsonSerializer.Deserialize<string>(raw);
+                return ParseVersion(value);
+            }
+
+            using var doc = JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+
+            if (root.ValueKind == JsonValueKind.String)
+            {
+                return ParseVersion(root.GetString());
+            }
+
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("version", out var versionProp))
+                {
+                    return ParseVersion(versionProp.GetString());
+                }
+
+                if (root.TryGetProperty("latestVersion", out var latestVersionProp))
+                {
+                    return ParseVersion(latestVersionProp.GetString());
+                }
+
+                if (root.TryGetProperty("tag", out var tagProp))
+                {
+                    return ParseVersion(tagProp.GetString());
+                }
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Version endpoint check failed");
+            return null;
+        }
+    }
+
+    private static Version? ParseVersion(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var normalized = raw.Trim().TrimStart('v', 'V');
+        return Version.TryParse(normalized, out var version) ? version : null;
     }
 
     private async Task CheckForModUpdatesAsync()

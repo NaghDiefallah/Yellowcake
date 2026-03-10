@@ -1,4 +1,5 @@
 ﻿using Avalonia.Collections;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -239,6 +240,11 @@ public partial class MainViewModel
     private bool _isLoading;
     private bool _isFiltering;
     private string _currentSort = "NameAsc";
+
+    private Dictionary<string, Mod> _remoteModIndex = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _searchIndex = new(StringComparer.OrdinalIgnoreCase);
+    private volatile int _activeBulkDownloads;
+    private DateTime _lastReconciliationNoticeUtc = DateTime.MinValue;
 
     partial void OnSelectedSourceChanged(KeyValuePair<string, string> value);
 }

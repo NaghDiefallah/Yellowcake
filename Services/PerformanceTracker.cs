@@ -11,7 +11,9 @@ public class PerformanceTracker
 {
     private readonly DatabaseService _db;
     private readonly List<DownloadMetric> _recentDownloads = new();
+    private readonly List<OperationMetric> _recentOperations = new();
     private const int MaxRecentDownloads = 100;
+    private const int MaxRecentOperations = 500;
 
     public PerformanceTracker(DatabaseService db)
     {
@@ -20,6 +22,7 @@ public class PerformanceTracker
 
     public void RecordDownload(string modId, string modName, long bytes, TimeSpan duration, bool success)
     {
+        var seconds = Math.Max(duration.TotalSeconds, 0.001);
         var metric = new DownloadMetric
         {
             Timestamp = DateTime.UtcNow,
@@ -28,7 +31,7 @@ public class PerformanceTracker
             BytesDownloaded = bytes,
             Duration = duration,
             Success = success,
-            SpeedMBps = bytes / duration.TotalSeconds / 1_048_576
+            SpeedMBps = bytes / seconds / 1_048_576
         };
 
         lock (_recentDownloads)
@@ -56,6 +59,12 @@ public class PerformanceTracker
         var allMetrics = _db.GetAll<DownloadMetric>("performance_metrics");
         var successful = allMetrics.Where(m => m.Success).ToList();
 
+        List<OperationMetric> recentOperations;
+        lock (_recentOperations)
+        {
+            recentOperations = _recentOperations.ToList();
+        }
+
         return new PerformanceStats
         {
             TotalDownloads = allMetrics.Count,
@@ -67,7 +76,10 @@ public class PerformanceTracker
             TotalDownloadTime = TimeSpan.FromSeconds(successful.Sum(m => m.Duration.TotalSeconds)),
             RecentDownloads = _recentDownloads.TakeLast(20).Reverse().ToList(),
             DownloadsByDay = GetDownloadsByDay(allMetrics),
-            TopMods = GetTopMods(successful)
+            TopMods = GetTopMods(successful),
+            RecentOperations = recentOperations.TakeLast(50).Reverse().ToList(),
+            OperationP50Ms = CalculatePercentile(recentOperations.Select(o => o.Duration.TotalMilliseconds).ToList(), 0.5),
+            OperationP95Ms = CalculatePercentile(recentOperations.Select(o => o.Duration.TotalMilliseconds).ToList(), 0.95)
         };
     }
 
@@ -96,6 +108,26 @@ public class PerformanceTracker
             .ToList();
     }
 
+    public void RecordOperation(string operationName, TimeSpan duration, bool success)
+    {
+        var metric = new OperationMetric
+        {
+            Timestamp = DateTime.UtcNow,
+            Operation = operationName,
+            Duration = duration,
+            Success = success
+        };
+
+        lock (_recentOperations)
+        {
+            _recentOperations.Add(metric);
+            if (_recentOperations.Count > MaxRecentOperations)
+            {
+                _recentOperations.RemoveAt(0);
+            }
+        }
+    }
+
     public void ClearHistory()
     {
         _db.DeleteAll("performance_metrics");
@@ -103,6 +135,24 @@ public class PerformanceTracker
         {
             _recentDownloads.Clear();
         }
+
+        lock (_recentOperations)
+        {
+            _recentOperations.Clear();
+        }
+    }
+
+    private static double CalculatePercentile(List<double> values, double percentile)
+    {
+        if (values.Count == 0)
+        {
+            return 0;
+        }
+
+        values.Sort();
+        var index = (int)Math.Ceiling(percentile * values.Count) - 1;
+        index = Math.Clamp(index, 0, values.Count - 1);
+        return values[index];
     }
 }
 
@@ -132,12 +182,23 @@ public class PerformanceStats
     public List<DownloadMetric> RecentDownloads { get; set; } = new();
     public Dictionary<DateTime, int> DownloadsByDay { get; set; } = new();
     public List<ModDownloadCount> TopMods { get; set; } = new();
+    public List<OperationMetric> RecentOperations { get; set; } = new();
+    public double OperationP50Ms { get; set; }
+    public double OperationP95Ms { get; set; }
     
     public double SuccessRate => TotalDownloads > 0 
         ? (double)SuccessfulDownloads / TotalDownloads * 100 
         : 0;
     
     public double TotalDataDownloadedGB => TotalDataDownloadedMB / 1024.0;
+}
+
+public class OperationMetric
+{
+    public DateTime Timestamp { get; set; }
+    public string Operation { get; set; } = string.Empty;
+    public TimeSpan Duration { get; set; }
+    public bool Success { get; set; }
 }
 
 public class ModDownloadCount

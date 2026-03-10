@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  DOTNET_VERSION: 10.0.x
+  SOLUTION_FILE: Yellowcake.slnx
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
+            global.json
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo
+
+      - name: Test with coverage
+        run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --nologo --logger "trx;LogFileName=test-results.trx" --collect "XPlat Code Coverage" --results-directory TestResults/${{ runner.os }}
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ runner.os }}
+          path: TestResults/${{ runner.os }}
+          if-no-files-found: warn
+          retention-days: 14
+
+  package-smoke:
+    name: Package Smoke Check (Linux)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
+            global.json
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
+
+      - name: Publish linux-x64
+        run: dotnet publish Yellowcake.csproj -c Release -r linux-x64 --self-contained true -p:ContinuousIntegrationBuild=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --nologo -o publish/linux-x64
+
+      - name: Smoke test executable exists
+        run: test -f publish/linux-x64/Yellowcake

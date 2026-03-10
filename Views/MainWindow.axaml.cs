@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Serilog;
 using System;
 using System.IO;
@@ -60,8 +61,8 @@ public partial class MainWindow : Window
 
     private void DragOver(object? sender, DragEventArgs e)
     {
-        // Only allow files
-        if (e.Data.Contains(DataFormats.Files))
+        var files = e.DataTransfer.Items.OfType<IStorageFile>();
+        if (files.Any())
         {
             e.DragEffects = DragDropEffects.Copy;
         }
@@ -73,11 +74,9 @@ public partial class MainWindow : Window
 
     private async void Drop(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains(DataFormats.Files)) return;
-
         try
         {
-            var files = e.Data.GetFiles()?.ToArray();
+            var files = e.DataTransfer.Items.OfType<IStorageFile>().ToArray();
             if (files == null || files.Length == 0) return;
 
             if (DataContext is not MainViewModel vm) return;
@@ -95,10 +94,6 @@ public partial class MainWindow : Window
 
                     case ".zip":
                         await vm.InstallFromZipCommand.ExecuteAsync(path);
-                        break;
-
-                    case ".json" when Path.GetFileName(path).Contains("manifest", StringComparison.OrdinalIgnoreCase):
-                        await vm.ImportManifestCommand.ExecuteAsync(path);
                         break;
 
                     default:

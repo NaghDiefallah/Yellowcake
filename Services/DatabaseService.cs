@@ -160,8 +160,9 @@ public class DatabaseService
             if (value == null) return defaultValue;
             return (T)Convert.ChangeType(value, typeof(T));
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warning(ex, "Failed to convert setting {Key} to type {Type}", key, typeof(T).Name);
             return defaultValue;
         }
     }
@@ -170,9 +171,12 @@ public class DatabaseService
     {
         try
         {
-            var collection = GetDatabase().GetCollection(collectionName);
-            collection.DeleteAll();
-            Log.Debug("Deleted all records from collection {Collection}", collectionName);
+            lock (_locker)
+            {
+                var collection = GetDatabase().GetCollection(collectionName);
+                collection.DeleteAll();
+                Log.Debug("Deleted all records from collection {Collection}", collectionName);
+            }
         }
         catch (Exception ex)
         {

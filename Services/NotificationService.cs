@@ -30,6 +30,7 @@ public class NotificationService : INotificationService
 
     private WindowNotificationManager? _manager;
     private readonly ConcurrentDictionary<string, ConfirmationContext> _pending = new();
+    private readonly ConcurrentDictionary<string, INotification> _activeNotifications = new();
     private int _count;
 
     private const int MaxNotifications = 5;
@@ -57,7 +58,7 @@ public class NotificationService : INotificationService
             Margin = new Thickness(0, 0, 15, 15)
         };
 
-        Log.Information("[NotificationService] Initialized");
+        Log.Information("[NotificationService] Initialized with close buttons enabled");
     }
 
     public void Show(string title, string message, NotificationType type = NotificationType.Information, TimeSpan? expiration = null, Action? onClick = null)
@@ -77,7 +78,23 @@ public class NotificationService : INotificationService
         if (Interlocked.Increment(ref _count) > MaxNotifications)
         {
             Interlocked.Decrement(ref _count);
+            Log.Warning("[NotificationService] Max notifications reached, dropping notification");
             return;
+        }
+
+        var notificationId = Guid.NewGuid().ToString();
+
+        void HandleClose()
+        {
+            _activeNotifications.TryRemove(notificationId, out _);
+            Interlocked.Decrement(ref _count);
+            Log.Debug("[NotificationService] Notification closed: {Title}", title);
+        }
+
+        void HandleClick()
+        {
+            onClick?.Invoke();
+            HandleClose();
         }
 
         var notification = new Notification(
@@ -85,11 +102,15 @@ public class NotificationService : INotificationService
             message,
             type,
             expiration ?? GetExpiration(type),
-            onClick,
-            () => Interlocked.Decrement(ref _count));
+            onClick != null ? HandleClick : null,
+            HandleClose);
 
+        _activeNotifications.TryAdd(notificationId, notification);
+        
         _manager.Show(notification);
-        Log.Debug("[NotificationService] {Title}", title);
+        
+        Log.Debug("[NotificationService] Shown: {Title} (closeable, expires in {Expiration}s)", 
+            title, (expiration ?? GetExpiration(type)).TotalSeconds);
     }
 
     public void Success(string message, TimeSpan? expiration = null)
@@ -104,11 +125,18 @@ public class NotificationService : INotificationService
         
         if (retryAction != null)
         {
-            Show("✗ Error", $"{message}\n\n👆 Click to retry", NotificationType.Error, expiration ?? TimeSpan.FromSeconds(10), retryAction);
+            Show("✗ Error", 
+                $"{message}\n\n👆 Click to retry • ✕ Close", 
+                NotificationType.Error, 
+                expiration ?? TimeSpan.FromSeconds(15), 
+                retryAction);
         }
         else
         {
-            Show("✗ Error", message, NotificationType.Error, expiration ?? TimeSpan.FromSeconds(10));
+            Show("✗ Error", 
+                message, 
+                NotificationType.Error, 
+                expiration ?? TimeSpan.FromSeconds(10));
         }
     }
 
@@ -145,7 +173,7 @@ public class NotificationService : INotificationService
 
             Show(
                 $"❓ {title}",
-                $"{message}\n\n👆 Click = YES | Auto-dismiss = NO ({effectiveTimeout.TotalSeconds:F0}s)",
+                $"{message}\n\n━━━━━━━━━━━━━\n[Click this notification] = YES\n[Click the X button] = NO\nAuto-dismiss in {effectiveTimeout.TotalSeconds:F0}s",
                 NotificationType.Information,
                 effectiveTimeout,
                 HandleYes);
@@ -184,7 +212,7 @@ public class NotificationService : INotificationService
 
             Show(
                 $"⚠ {title}",
-                $"{message}\n\n👆 Click = CONFIRM | Auto-dismiss = CANCEL ({effectiveTimeout.TotalSeconds:F0}s)",
+                $"{message}\n\n━━━━━━━━━━━━━\n[Click this notification] = CONFIRM\n[Click the X button] = CANCEL\nAuto-dismiss in {effectiveTimeout.TotalSeconds:F0}s",
                 NotificationType.Warning,
                 effectiveTimeout,
                 HandleConfirm);
@@ -206,14 +234,30 @@ public class NotificationService : INotificationService
     {
         Dispatcher.UIThread.Post(() =>
         {
+            foreach (var notification in _activeNotifications.Values)
+            {
+                try
+                {
+                    _manager?.Close(notification);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "[NotificationService] Error closing notification");
+                }
+            }
+
+            _activeNotifications.Clear();
+
             foreach (var ctx in _pending.Values)
             {
                 ctx.Tcs.TrySetResult(false);
                 ctx.Cts.Cancel();
             }
+            
             _pending.Clear();
             _count = 0;
-            Log.Debug("[NotificationService] Cleared");
+            
+            Log.Debug("[NotificationService] Cleared all notifications");
         });
     }
 

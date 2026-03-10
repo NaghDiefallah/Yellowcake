@@ -23,11 +23,12 @@ namespace Yellowcake.ViewModels;
 
 public partial class MainViewModel
 {
+    private const long DefaultFileSizeForMetrics = 1048576; // 1 MB
+
     [ObservableProperty] private string _downloadETA = string.Empty;
     [ObservableProperty] private double _downloadSpeedMBps = 0;
     
     private Stopwatch? _downloadTimer;
-    private long _lastBytesReceived = 0;
     private DateTime _lastSpeedUpdate = DateTime.UtcNow;
 
     // Track active downloads for cancellation support
@@ -40,11 +41,14 @@ public partial class MainViewModel
 
         InstallDebugHelper.LogInstallAttempt(mod, _db, _pathService);
 
+        var isBulk = _activeBulkDownloads > 0;
+
         var existing = InstalledMods.FirstOrDefault(m => m.Id == mod.Id);
         if (existing != null && !existing.HasUpdate)
         {
             Log.Debug("Installation skipped: {ModId} is already current.", mod.Id);
-            NotificationService.Instance.Warning($"{mod.Name} is already up to date.");
+            if (!isBulk)
+                NotificationService.Instance.Warning($"{mod.Name} is already up to date.");
             mod.IsInstalled = true;
             return;
         }
@@ -56,7 +60,6 @@ public partial class MainViewModel
             return;
         }
 
-        // ADD THESE VARIABLES
         var downloadStopwatch = Stopwatch.StartNew();
         var downloadSuccess = false;
         long bytesDownloaded = 0;
@@ -66,24 +69,36 @@ public partial class MainViewModel
             mod.IsDownloading = true;
             mod.DownloadProgress = 0;
             _downloadTimer = Stopwatch.StartNew();
-            _lastBytesReceived = 0;
             _lastSpeedUpdate = DateTime.UtcNow;
-            GameStatus = $"Downloading: {mod.Name}";
+            if (!isBulk)
+                GameStatus = $"Downloading: {mod.Name}";
 
             Log.Information("Starting download for {ModName}", mod.Name);
 
-            var progress = new Progress<double>(p =>
+            Uri? resourceUri = null;
+            if (Uri.TryCreate(mod.EffectiveUrl ?? mod.DownloadUrl, UriKind.Absolute, out var parsedUri))
             {
-                mod.DownloadProgress = p;
-                Log.Debug("Download progress: {Progress}%", p);
-            });
+                resourceUri = parsedUri;
+            }
 
-            await _modService.DownloadAndInstallModAsync(
-                mod, 
-                progress, 
-                _allRemoteMods, 
-                cts.Token
-            );
+            await _downloadQueue.EnqueueAsync(
+                taskId: mod.Id,
+                operation: async (queueProgress, token) =>
+                {
+                    var mergedProgress = new Progress<double>(p =>
+                    {
+                        mod.DownloadProgress = p;
+                        queueProgress.Report(p);
+                        Log.Debug("Download progress: {Progress}%", p);
+                    });
+
+                    await _modService.DownloadAndInstallModAsync(mod, mergedProgress, _allRemoteMods, token);
+                    return true;
+                },
+                cancellationToken: cts.Token,
+                estimatedBytes: mod.FileSizeBytes,
+                priority: mod.HasUpdate ? 10 : 0,
+                resourceUri: resourceUri);
 
             Log.Information("Download completed for {ModName}", mod.Name);
 
@@ -92,27 +107,20 @@ public partial class MainViewModel
 
             Log.Information("Mod saved to database: {ModId}", mod.Id);
 
-            // ADD THIS: Record successful download
-            bytesDownloaded = mod.FileSizeBytes > 0 ? mod.FileSizeBytes : 1048576; // Default to 1MB if unknown
+            bytesDownloaded = mod.FileSizeBytes > 0 ? mod.FileSizeBytes : DefaultFileSizeForMetrics;
             downloadSuccess = true;
 
-            await RefreshUI();
-            
-            Log.Information("UI refreshed after install");
-            
-            NotificationService.Instance.Success($"{mod.Name} installed successfully!");
+            if (!isBulk)
+            {
+                await RefreshUI();
+                NotificationService.Instance.Success($"{mod.Name} installed successfully!");
+            }
         }
         catch (OperationCanceledException)
         {
             Log.Information("Installation cancelled by user or shutdown: {ModId}", mod.Id);
-            NotificationService.Instance.Info($"{mod.Name} installation cancelled.");
-        }
-        catch (System.Security.SecurityException ex)
-        {
-            Log.Error(ex, "Hash verification failed: {ModId}", mod.Id);
-            NotificationService.Instance.Error(
-                $"Security check failed for {mod.Name}. Hash mismatch detected - file may be corrupted or modified.",
-                () => DownloadModCommand.Execute(mod));
+            if (!isBulk)
+                NotificationService.Instance.Info($"{mod.Name} installation cancelled.");
         }
         catch (HttpRequestException ex)
         {
@@ -131,7 +139,8 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             Log.Error(ex, "Fault during mod installation: {ModId}", mod.Id);
-            GameStatus = "Error";
+            if (!isBulk)
+                GameStatus = "Error";
             NotificationService.Instance.Error(
                 $"Failed to install {mod.Name}: {ex.Message}",
                 () => DownloadModCommand.Execute(mod));
@@ -150,7 +159,6 @@ public partial class MainViewModel
                 try { storedCts.Dispose(); } catch { }
             }
 
-            // ADD THIS: Record performance metrics
             downloadStopwatch.Stop();
             try
             {
@@ -169,7 +177,7 @@ public partial class MainViewModel
                 Log.Warning(ex, "Failed to record performance metric");
             }
 
-            if (GameStatus != "Error")
+            if (!isBulk && GameStatus != "Error")
             {
                 GameStatus = "Ready";
             }
@@ -187,14 +195,13 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    public void ToggleMod(Mod? mod)
+    public async Task ToggleMod(Mod? mod)
     {
         if (mod == null || !IsGameDetected || !mod.IsInstalled) return;
 
         try
         {
-            _modService.ToggleMod(mod.Id, mod.IsEnabled);
-            _db.Upsert("addons", mod);
+            await _modService.ToggleModAsync(mod);
             GameStatus = mod.IsEnabled ? $"{mod.Name} enabled" : $"{mod.Name} disabled";
             NotificationService.Instance.Info($"{mod.Name} is now {(mod.IsEnabled ? "enabled" : "disabled")}");
         }
@@ -227,8 +234,7 @@ public partial class MainViewModel
         try
         {
             GameStatus = $"Deleting {mod.Name}...";
-            _modService.DeleteMod(mod.Id);
-            _db.Delete("addons", mod.Id);
+            await _modService.DeleteModAsync(mod);
 
             mod.MarkAsUninstalled();
 
@@ -267,32 +273,108 @@ public partial class MainViewModel
 
         if (!confirmed) return;
 
-        foreach (var mod in updates)
+        var total = updates.Count;
+        Interlocked.Add(ref _activeBulkDownloads, total);
+        GameStatus = $"Updating {total} mod(s)...";
+
+        var tasks = updates.Select(async m =>
         {
-            await DownloadMod(mod);
-        }
+            try { await DownloadMod(m); }
+            finally
+            {
+                var remaining = Interlocked.Decrement(ref _activeBulkDownloads);
+                if (remaining <= 0)
+                    GameStatus = "Ready";
+            }
+        }).ToList();
+
+        await Task.WhenAll(tasks);
+
+        await SyncInstalledStates();
+        await RefreshUI();
+
+        var stillPending = InstalledMods.Count(m => m.HasUpdate);
+        var updated = total - stillPending;
+        if (updated > 0)
+            NotificationService.Instance.Success($"Updated {updated}/{total} mod(s).");
+        else
+            NotificationService.Instance.Warning("No mods were updated.");
+
+        GameStatus = "Ready";
     }
 
     [RelayCommand]
-    public void EnableAll()
+    public async Task EnableAll()
     {
-        foreach (var mod in InstalledMods.Where(m => !m.IsEnabled))
+        var toEnable = InstalledMods.Where(m => !m.IsEnabled).ToList();
+        if (toEnable.Count == 0) return;
+
+        int successCount = 0;
+        int failCount = 0;
+        var initialCount = toEnable.Count;
+
+        var tasks = toEnable.Select(async mod =>
         {
             mod.IsEnabled = true;
-            ToggleMod(mod);
+            try
+            {
+                await _modService.ToggleModAsync(mod);
+                Interlocked.Increment(ref successCount);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "EnableAll failed for {ModId}", mod.Id);
+                mod.IsEnabled = false;
+                Interlocked.Increment(ref failCount);
+            }
+        });
+        await Task.WhenAll(tasks);
+
+        if (failCount > 0)
+        {
+            NotificationService.Instance.Warning($"Enabled {successCount}/{initialCount} mod(s).");
         }
-        NotificationService.Instance.Success($"Enabled {InstalledMods.Count(m => m.IsEnabled)} mod(s).");
+        else
+        {
+            NotificationService.Instance.Success($"Enabled {successCount} mod(s).");
+        }
     }
 
     [RelayCommand]
-    public void DisableAll()
+    public async Task DisableAll()
     {
-        foreach (var mod in InstalledMods.Where(m => m.IsEnabled))
+        var toDisable = InstalledMods.Where(m => m.IsEnabled).ToList();
+        if (toDisable.Count == 0) return;
+
+        int successCount = 0;
+        int failCount = 0;
+        var initialCount = toDisable.Count;
+
+        var tasks = toDisable.Select(async mod =>
         {
             mod.IsEnabled = false;
-            ToggleMod(mod);
+            try
+            {
+                await _modService.ToggleModAsync(mod);
+                Interlocked.Increment(ref successCount);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "DisableAll failed for {ModId}", mod.Id);
+                mod.IsEnabled = true;
+                Interlocked.Increment(ref failCount);
+            }
+        });
+        await Task.WhenAll(tasks);
+
+        if (failCount > 0)
+        {
+            NotificationService.Instance.Warning($"Disabled {successCount}/{initialCount} mod(s).");
         }
-        NotificationService.Instance.Info("All mods disabled.");
+        else
+        {
+            NotificationService.Instance.Success($"Disabled {successCount} mod(s).");
+        }
     }
 
     [RelayCommand]
@@ -310,22 +392,23 @@ public partial class MainViewModel
 
         int successCount = 0;
         int failCount = 0;
+        var initialCount = installed.Count;
 
-        foreach (var mod in installed)
+        var deleteTasks = installed.Select(async mod =>
         {
             try
             {
-                _modService.DeleteMod(mod.Id);
-                _db.Delete("addons", mod.Id);
+                await _modService.DeleteModAsync(mod);
                 mod.MarkAsUninstalled();
-                successCount++;
+                Interlocked.Increment(ref successCount);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Mass delete failed for {Id}", mod.Id);
-                failCount++;
+                Interlocked.Increment(ref failCount);
             }
-        }
+        });
+        await Task.WhenAll(deleteTasks);
 
         await SyncInstalledStates();
         await RefreshUI();
@@ -333,40 +416,12 @@ public partial class MainViewModel
 
         if (failCount > 0)
         {
-            NotificationService.Instance.Warning($"Removed {successCount} mod(s), but {failCount} failed.");
+            NotificationService.Instance.Warning(
+                $"Removed {successCount}/{initialCount} mod(s). {failCount} failed - check logs.");
         }
         else
         {
             NotificationService.Instance.Success($"All {successCount} mods removed successfully.");
-        }
-    }
-
-    [RelayCommand]
-    private void OpenModFolder(Mod? mod)
-    {
-        if (mod == null) return;
-
-        try
-        {
-            var path = _installService.GetInstallPath(mod.Id);
-            if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-            else
-            {
-                NotificationService.Instance.Warning($"Mod folder not found for {mod.Name}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to open mod folder for {ModId}", mod.Id);
-            NotificationService.Instance.Error("Failed to open mod folder");
         }
     }
 
@@ -519,13 +574,19 @@ public partial class MainViewModel
             var viewModel = viewer.DataContext as ScreenshotViewerViewModel;
             if (viewModel != null)
             {
-                // Convert List<string> to string[]
                 await viewModel.LoadScreenshotsAsync(mod.ScreenshotUrls.ToArray(), mod.Name);
             }
 
             if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                await viewer.ShowDialog(desktop.MainWindow);
+                if (desktop.MainWindow != null)
+                {
+                    await viewer.ShowDialog(desktop.MainWindow);
+                }
+                else
+                {
+                    viewer.Show();
+                }
             }
             else
             {
@@ -689,51 +750,8 @@ public partial class MainViewModel
     [RelayCommand]
     public async Task ImportManifestAsync(string? manifestPath = null)
     {
-        try
-        {
-            if (string.IsNullOrEmpty(manifestPath))
-            {
-                var desktop = Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
-                var window = desktop?.MainWindow;
-                if (window == null) return;
-
-                var topLevel = TopLevel.GetTopLevel(window);
-                if (topLevel?.StorageProvider == null) return;
-
-                var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-                {
-                    Title = "Select Manifest File",
-                    AllowMultiple = false,
-                    FileTypeFilter = new[]
-                    {
-                        new FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } },
-                        FilePickerFileTypes.All
-                    }
-                });
-
-                if (files.Count == 0) return;
-                manifestPath = files[0].Path.LocalPath;
-            }
-
-            if (!File.Exists(manifestPath))
-            {
-                NotificationService.Instance.Error("Manifest file not found");
-                return;
-            }
-
-            // Read and parse the manifest file
-            var jsonContent = await File.ReadAllTextAsync(manifestPath);
-            
-            // Parse and process the manifest (implementation depends on your manifest format)
-            NotificationService.Instance.Success("Custom manifest imported successfully");
-            
-            await LoadAvailableModsAsync();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to import manifest");
-            NotificationService.Instance.Error($"Failed to import manifest: {ex.Message}");
-        }
+        await Task.CompletedTask;
+        NotificationService.Instance.Warning("Custom manifest import is disabled. The app uses the official NOMNOM manifest.");
     }
 
     [RelayCommand]

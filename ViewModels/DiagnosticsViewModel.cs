@@ -63,7 +63,7 @@ public partial class DiagnosticsViewModel : ObservableObject
                 {
                     Name = name.Name ?? "Unknown",
                     Version = name.Version?.ToString() ?? "Unknown",
-                    Location = assembly.IsDynamic ? "Dynamic" : assembly.Location
+                    Location = assembly.IsDynamic ? "Dynamic" : AppContext.BaseDirectory
                 });
             }
             catch { }

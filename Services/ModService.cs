@@ -79,11 +79,15 @@ public class ModService
         Log.Information("Starting download: {ModName} v{Version} from {Url}", mod.Name, mod.Version, downloadUrl);
 
         var tempFile = Path.Combine(Path.GetTempPath(), $"{mod.Id}_{Guid.NewGuid()}.tmp");
-        var modStoragePath = GetModStoragePath(mod.Id);
-        var voiceStoragePath = Path.Combine(PathService.GetModsDirectory(), "WSOYappinator", "audio");
+        var modStoragePath = GetStoragePath(mod);
 
         try
         {
+            if (mod.IsVoicePack)
+            {
+                await EnsureVoicePackHostInstalledAsync(allMods, ct);
+            }
+
             await DownloadFileWithProgressAsync(downloadUrl, tempFile, progress, ct);
 
             var fileType = DetectFileType(tempFile);
@@ -103,16 +107,19 @@ public class ModService
                     if (mod.ShouldVerifyHash && !string.IsNullOrWhiteSpace(hashToVerify))
                     {
                         Log.Information("Verifying hash for {ModName}", mod.Name);
-                        var actualHash = await VerifyHashAsync(tempFile, hashToVerify);
+                        var hashResult = await VerifyHashAsync(tempFile, hashToVerify);
                         
-                        if (actualHash == "skipped")
+                        if (!hashResult.Success && hashResult.ErrorMessage != null)
                         {
-                            Log.Debug("Hash verification skipped for {ModName}", mod.Name);
+                            // Log warning but don't block installation
+                            Log.Warning("Hash verification failed for {ModName}: {Error}", mod.Name, hashResult.ErrorMessage);
+                            NotificationService.Instance.Warning(
+                                $"⚠ Hash verification failed for {mod.Name}: {hashResult.ErrorMessage}\n\nInstalling anyway, but please verify file integrity.");
                         }
                     }
 
-                    if(mod.IsVoicePack) await ExtractToStorageAsync(tempFile, voiceStoragePath, ct);
                     await ExtractToStorageAsync(tempFile, modStoragePath, ct);
+                    NormalizeExtractedStructure(modStoragePath);
                     break;
 
                 case FileType.Invalid:
@@ -157,7 +164,7 @@ public class ModService
         {
             using var fs = File.OpenRead(filePath);
             var buffer = new byte[4];
-            fs.Read(buffer, 0, 4);
+            fs.ReadExactly(buffer, 0, 4);
 
             if (buffer[0] == 0x50 && buffer[1] == 0x4B)
             {
@@ -189,14 +196,14 @@ public class ModService
                 
                 fs.Seek(0x3C, SeekOrigin.Begin);
                 var peOffset = new byte[4];
-                fs.Read(peOffset, 0, 4);
+                fs.ReadExactly(peOffset, 0, 4);
                 var peHeaderOffset = BitConverter.ToInt32(peOffset, 0);
                 
                 if (peHeaderOffset > 0 && peHeaderOffset < fs.Length - 4)
                 {
                     fs.Seek(peHeaderOffset, SeekOrigin.Begin);
                     var peSignature = new byte[4];
-                    fs.Read(peSignature, 0, 4);
+                    fs.ReadExactly(peSignature, 0, 4);
                     
                     if (peSignature[0] == 0x50 && peSignature[1] == 0x45)
                     {
@@ -222,6 +229,140 @@ public class ModService
     private static string GetModStoragePath(string modId)
     {
         return Path.Combine(PathService.GetModsDirectory(), modId);
+    }
+
+    private static string GetStoragePath(Mod mod)
+    {
+        return GetModStoragePath(mod.Id);
+    }
+
+    private static string GetLegacyVoiceStoragePath(string modId)
+    {
+        return Path.Combine(PathService.GetModsDirectory(), "WSOYappinator", "audio", modId);
+    }
+
+    private bool IsWsoyAppinatorInstalled()
+    {
+        var installed = _db.GetAll<Mod>("addons")
+            .Any(m => string.Equals(m.Id, "WSOYappinator", StringComparison.OrdinalIgnoreCase) && m.IsInstalled);
+        if (installed)
+        {
+            return true;
+        }
+
+        var storagePath = GetModStoragePath("WSOYappinator");
+        if (Directory.Exists(storagePath) && Directory.EnumerateFiles(storagePath, "*", SearchOption.AllDirectories).Any())
+        {
+            return true;
+        }
+
+        var gamePath = _db.GetSetting("GamePath");
+        if (string.IsNullOrWhiteSpace(gamePath))
+        {
+            return false;
+        }
+
+        var gameDir = Path.GetDirectoryName(gamePath);
+        if (string.IsNullOrWhiteSpace(gameDir))
+        {
+            return false;
+        }
+
+        var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
+        var hostFolder = Path.Combine(pluginsDir, "WSOYappinator");
+
+        if (Directory.Exists(hostFolder))
+        {
+            return true;
+        }
+
+        return Directory.Exists(pluginsDir) &&
+               Directory.EnumerateFiles(pluginsDir, "*WSOYappinator*.dll", SearchOption.AllDirectories).Any();
+    }
+
+    private async Task EnsureVoicePackHostInstalledAsync(List<Mod> allMods, CancellationToken ct)
+    {
+        if (IsWsoyAppinatorInstalled())
+        {
+            return;
+        }
+
+        var existingHost = _db.GetAll<Mod>("addons")
+            .FirstOrDefault(m => string.Equals(m.Id, "WSOYappinator", StringComparison.OrdinalIgnoreCase));
+
+        if (existingHost != null)
+        {
+            Log.Information("WSOYappinator found in local DB but not active. Enabling before voice pack installation.");
+            await EnableModAsync(existingHost);
+            _db.Upsert("addons", existingHost);
+            return;
+        }
+
+        var hostMod = allMods.FirstOrDefault(m => string.Equals(m.Id, "WSOYappinator", StringComparison.OrdinalIgnoreCase));
+        if (hostMod == null)
+        {
+            throw new InvalidOperationException("Voice pack requires WSOYappinator, but it was not found in the manifest.");
+        }
+
+        Log.Information("Installing required dependency WSOYappinator before voice pack installation.");
+        NotificationService.Instance.Info("Installing required dependency: WSO Yappinator...");
+
+        await DownloadAndInstallModAsync(
+            hostMod,
+            new Progress<double>(_ => { }),
+            allMods,
+            ct);
+    }
+
+    private static void NormalizeExtractedStructure(string rootPath)
+    {
+        if (!Directory.Exists(rootPath))
+        {
+            return;
+        }
+
+        // Flatten wrapper folders like modId/modId/... while preserving actual content hierarchy.
+        while (true)
+        {
+            var directFiles = Directory.GetFiles(rootPath);
+            var directDirs = Directory.GetDirectories(rootPath);
+
+            if (directFiles.Length > 0 || directDirs.Length != 1)
+            {
+                break;
+            }
+
+            var childDir = directDirs[0];
+            var childEntries = Directory.GetFileSystemEntries(childDir);
+
+            foreach (var entry in childEntries)
+            {
+                var destination = Path.Combine(rootPath, Path.GetFileName(entry));
+
+                if (Directory.Exists(entry))
+                {
+                    if (Directory.Exists(destination))
+                    {
+                        CopyDirectory(entry, destination);
+                        Directory.Delete(entry, true);
+                    }
+                    else
+                    {
+                        Directory.Move(entry, destination);
+                    }
+                }
+                else if (File.Exists(entry))
+                {
+                    File.Copy(entry, destination, overwrite: true);
+                    File.Delete(entry);
+                }
+            }
+
+            if (Directory.Exists(childDir) && !Directory.EnumerateFileSystemEntries(childDir).Any())
+            {
+                Directory.Delete(childDir, true);
+            }
+        }
     }
 
     private string GetGameTargetPath(Mod mod)
@@ -290,7 +431,16 @@ public class ModService
 
     private async Task EnableModAsync(Mod mod)
     {
-        var sourcePath = GetModStoragePath(mod.Id);
+        var sourcePath = GetStoragePath(mod);
+        if (!Directory.Exists(sourcePath) && mod.IsVoicePack)
+        {
+            var legacyVoicePath = GetLegacyVoiceStoragePath(mod.Id);
+            if (Directory.Exists(legacyVoicePath))
+            {
+                sourcePath = legacyVoicePath;
+            }
+        }
+
         var targetPath = GetGameTargetPath(mod);
 
         if (!Directory.Exists(sourcePath))
@@ -401,12 +551,10 @@ public class ModService
             if (mod.IsEnabled)
             {
                 await DisableModAsync(mod);
-                NotificationService.Instance.Info($"{mod.Name} is now disabled");
             }
             else
             {
                 await EnableModAsync(mod);
-                NotificationService.Instance.Success($"{mod.Name} is now enabled");
             }
 
             _db.Upsert("addons", mod);
@@ -419,25 +567,209 @@ public class ModService
         }
     }
 
-    public void ToggleMod(string modId, bool isEnabled)
+    public Mod? FindInstalledMod(string modId)
     {
-        if (string.IsNullOrWhiteSpace(modId))
+        return _db.GetAll<Mod>("addons").FirstOrDefault(m => m.Id == modId);
+    }
+
+    public ReconciliationResult ReconcileInstalledModsWithDisk(List<Mod> remoteMods)
+    {
+        var result = new ReconciliationResult();
+
+        if (remoteMods == null)
         {
-            throw new ArgumentNullException(nameof(modId));
+            return result;
         }
 
-        var mod = _db.GetAll<Mod>("addons").FirstOrDefault(m => m.Id == modId);
-        if (mod == null)
+        var dbMods = _db.GetAll<Mod>("addons");
+        var dbById = dbMods.ToDictionary(m => m.Id, StringComparer.OrdinalIgnoreCase);
+
+        // Discover mods that exist on disk but are missing from the local DB.
+        foreach (var remote in remoteMods.Where(m => !string.IsNullOrWhiteSpace(m.Id)))
         {
-            throw new InvalidOperationException($"Mod not found: {modId}");
+            var presentOnDisk = IsModPresentOnDisk(remote);
+            if (!presentOnDisk)
+            {
+                continue;
+            }
+
+            var enabled = IsEnabledOnDisk(remote);
+
+            if (dbById.TryGetValue(remote.Id, out var existing))
+            {
+                var changed = false;
+
+                if (!existing.IsInstalled)
+                {
+                    existing.IsInstalled = true;
+                    changed = true;
+                }
+
+                if (existing.IsEnabled != enabled)
+                {
+                    existing.IsEnabled = enabled;
+                    changed = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(existing.InstalledVersionString))
+                {
+                    existing.InstalledVersionString = remote.Version;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    _db.Upsert("addons", existing);
+                    result.Updated++;
+                }
+
+                continue;
+            }
+
+            var discovered = CreateDiscoveredRecord(remote, enabled);
+            _db.Upsert("addons", discovered);
+            dbById[discovered.Id] = discovered;
+            result.Discovered++;
         }
 
-        if (mod.IsEnabled == isEnabled)
+        // Mark DB mods as removed when no managed storage or on-disk install exists anymore.
+        foreach (var dbMod in dbById.Values)
         {
-            return;
+            if (!dbMod.IsInstalled)
+            {
+                continue;
+            }
+
+            if (IsModPresentOnDisk(dbMod))
+            {
+                continue;
+            }
+
+            dbMod.MarkAsUninstalled();
+            _db.Upsert("addons", dbMod);
+            result.Removed++;
         }
 
-        Task.Run(async () => await ToggleModAsync(mod)).Wait();
+        return result;
+    }
+
+    private static Mod CreateDiscoveredRecord(Mod remote, bool enabled)
+    {
+        var discovered = new Mod
+        {
+            Id = remote.Id,
+            Name = remote.Name,
+            Description = remote.Description,
+            InfoUrl = remote.InfoUrl,
+            Authors = remote.Authors?.ToList() ?? new List<string>(),
+            Tags = remote.Tags?.ToList() ?? new List<string>(),
+            Artifacts = remote.Artifacts?.ToList() ?? new List<Yellowcake.Models.Artifact>(),
+            ScreenshotUrls = remote.ScreenshotUrls?.ToList() ?? new List<string>(),
+            PreviewImageUrl = remote.PreviewImageUrl,
+            IsVoicePack = remote.IsVoicePack,
+            IsLivery = remote.IsLivery,
+            IsMission = remote.IsMission,
+            Source = "Remote",
+            IsInstalled = true,
+            IsEnabled = enabled,
+            InstalledVersionString = remote.Version,
+            InstalledArtifactHash = remote.Hash
+        };
+
+        return discovered;
+    }
+
+    private bool IsModPresentOnDisk(Mod mod)
+    {
+        var storagePath = GetStoragePath(mod);
+        if (Directory.Exists(storagePath) && Directory.EnumerateFileSystemEntries(storagePath, "*", SearchOption.AllDirectories).Any())
+        {
+            return true;
+        }
+
+        if (mod.IsVoicePack)
+        {
+            var legacyPath = GetLegacyVoiceStoragePath(mod.Id);
+            if (Directory.Exists(legacyPath) && Directory.EnumerateFileSystemEntries(legacyPath, "*", SearchOption.AllDirectories).Any())
+            {
+                return true;
+            }
+        }
+
+        var targetPath = TryGetGameTargetPath(mod);
+        if (!string.IsNullOrWhiteSpace(targetPath) && (Directory.Exists(targetPath) || File.Exists(targetPath)))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IsEnabledOnDisk(Mod mod)
+    {
+        var targetPath = TryGetGameTargetPath(mod);
+        if (string.IsNullOrWhiteSpace(targetPath))
+        {
+            return false;
+        }
+
+        return Directory.Exists(targetPath) || File.Exists(targetPath);
+    }
+
+    private string? TryGetGameTargetPath(Mod mod)
+    {
+        try
+        {
+            return GetGameTargetPath(mod);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<int> RepairStoredModLayoutsAsync(CancellationToken ct = default)
+    {
+        var installedMods = _db.GetAll<Mod>("addons");
+        var repairedCount = 0;
+
+        foreach (var mod in installedMods)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var primaryStoragePath = GetStoragePath(mod);
+            if (HasSingleWrapperDirectory(primaryStoragePath))
+            {
+                await Task.Run(() => NormalizeExtractedStructure(primaryStoragePath), ct);
+                repairedCount++;
+                Log.Information("Repaired nested mod structure for {ModId} at {Path}", mod.Id, primaryStoragePath);
+            }
+
+            if (mod.IsVoicePack)
+            {
+                var legacyVoicePath = GetLegacyVoiceStoragePath(mod.Id);
+                if (HasSingleWrapperDirectory(legacyVoicePath))
+                {
+                    await Task.Run(() => NormalizeExtractedStructure(legacyVoicePath), ct);
+                    repairedCount++;
+                    Log.Information("Repaired nested legacy voice structure for {ModId} at {Path}", mod.Id, legacyVoicePath);
+                }
+            }
+        }
+
+        return repairedCount;
+    }
+
+    private static bool HasSingleWrapperDirectory(string rootPath)
+    {
+        if (!Directory.Exists(rootPath))
+        {
+            return false;
+        }
+
+        var directFiles = Directory.GetFiles(rootPath);
+        var directDirs = Directory.GetDirectories(rootPath);
+        return directFiles.Length == 0 && directDirs.Length == 1;
     }
 
     public async Task DeleteModAsync(Mod mod)
@@ -448,12 +780,22 @@ public class ModService
         {
             await DisableModAsync(mod);
 
-            var storagePath = GetModStoragePath(mod.Id);
+            var storagePath = GetStoragePath(mod);
 
             if (Directory.Exists(storagePath))
             {
                 await Task.Run(() => Directory.Delete(storagePath, true));
                 Log.Information("Deleted mod storage: {Path}", storagePath);
+            }
+
+            if (mod.IsVoicePack)
+            {
+                var legacyVoicePath = GetLegacyVoiceStoragePath(mod.Id);
+                if (Directory.Exists(legacyVoicePath))
+                {
+                    await Task.Run(() => Directory.Delete(legacyVoicePath, true));
+                    Log.Information("Deleted legacy voice pack storage: {Path}", legacyVoicePath);
+                }
             }
 
             _db.Delete("addons", mod.Id);
@@ -467,21 +809,7 @@ public class ModService
         }
     }
 
-    public void DeleteMod(string modId)
-    {
-        if (string.IsNullOrWhiteSpace(modId))
-        {
-            throw new ArgumentNullException(nameof(modId));
-        }
 
-        var mod = _db.GetAll<Mod>("addons").FirstOrDefault(m => m.Id == modId);
-        if (mod == null)
-        {
-            throw new InvalidOperationException($"Mod not found: {modId}");
-        }
-
-        Task.Run(async () => await DeleteModAsync(mod)).Wait();
-    }
 
     public static bool HasUpdate(Mod installed, Mod remote)
     {
@@ -505,13 +833,13 @@ public class ModService
         }
     }
 
-    public async Task<string> VerifyHashAsync(string filePath, string? expectedHash)
+    public async Task<(bool Success, string Hash, string? ErrorMessage)> VerifyHashAsync(string filePath, string? expectedHash)
     {
         if (string.IsNullOrWhiteSpace(expectedHash) || 
             expectedHash.Equals("null", StringComparison.OrdinalIgnoreCase))
         {
-            Log.Warning("No hash provided for verification, skipping");
-            return "skipped";
+            Log.Debug("No hash provided for verification, skipping");
+            return (Success: true, Hash: "skipped", ErrorMessage: null);
         }
 
         try
@@ -529,17 +857,18 @@ public class ModService
             if (actualHash.Equals(cleanExpectedHash, StringComparison.OrdinalIgnoreCase))
             {
                 Log.Information("Hash verification passed: {Hash}", actualHash);
-                return actualHash;
+                return (Success: true, Hash: actualHash, ErrorMessage: null);
             }
 
-            Log.Warning("Hash mismatch! Expected: {Expected}, Actual: {Actual}", 
-                cleanExpectedHash, actualHash);
-            throw new System.Security.SecurityException($"Hash verification failed. Expected: {cleanExpectedHash}, Actual: {actualHash}");
+            var mismatchMsg = $"Hash mismatch: expected {cleanExpectedHash[..8]}... but got {actualHash[..8]}...";
+            Log.Warning("Hash verification failed: {Message}", mismatchMsg);
+            return (Success: false, Hash: actualHash, ErrorMessage: mismatchMsg);
         }
-        catch (Exception ex) when (ex is not System.Security.SecurityException)
+        catch (Exception ex)
         {
-            Log.Error(ex, "Hash verification error");
-            throw new InvalidDataException("Failed to verify file integrity", ex);
+            var errorMsg = $"Hash verification error: {ex.Message}";
+            Log.Error(ex, "Hash verification failed");
+            return (Success: false, Hash: "", ErrorMessage: errorMsg);
         }
     }
 
@@ -802,4 +1131,13 @@ public class ModValidationResult
     public List<Mod> ConflictingMods { get; set; } = new();
     public List<string> Errors { get; set; } = new();
     public List<string> Warnings { get; set; } = new();
+}
+
+public class ReconciliationResult
+{
+    public int Discovered { get; set; }
+    public int Updated { get; set; }
+    public int Removed { get; set; }
+
+    public int TotalChanges => Discovered + Updated + Removed;
 }

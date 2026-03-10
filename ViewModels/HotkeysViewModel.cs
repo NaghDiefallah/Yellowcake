@@ -14,9 +14,9 @@ public partial class HotkeysViewModel : ObservableObject
 
     private void LoadHotkeys()
     {
-        _hotkeyGroups.Clear();
+        HotkeyGroups.Clear();
 
-        _hotkeyGroups.Add(new HotkeyGroup
+        HotkeyGroups.Add(new HotkeyGroup
         {
             Category = "Navigation",
             Hotkeys = new()
@@ -29,7 +29,7 @@ public partial class HotkeysViewModel : ObservableObject
             }
         });
 
-        _hotkeyGroups.Add(new HotkeyGroup
+        HotkeyGroups.Add(new HotkeyGroup
         {
             Category = "Mod Management",
             Hotkeys = new()
@@ -43,7 +43,7 @@ public partial class HotkeysViewModel : ObservableObject
             }
         });
 
-        _hotkeyGroups.Add(new HotkeyGroup
+        HotkeyGroups.Add(new HotkeyGroup
         {
             Category = "Tools",
             Hotkeys = new()
@@ -56,7 +56,7 @@ public partial class HotkeysViewModel : ObservableObject
             }
         });
 
-        _hotkeyGroups.Add(new HotkeyGroup
+        HotkeyGroups.Add(new HotkeyGroup
         {
             Category = "Window",
             Hotkeys = new()

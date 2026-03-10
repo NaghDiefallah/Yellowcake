@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -38,15 +39,17 @@ public partial class MainViewModel
     [ObservableProperty] private bool _enableVerboseLogging;
     [ObservableProperty] private bool _useSecondaryManifest;
     [ObservableProperty] private bool _isHardwareAccelerationEnabled = true;
-    [ObservableProperty] public string _selectedSourceName = "Primary Source";
+    [ObservableProperty] public string _selectedSourceName = OfficialManifestName;
+
+    public const string OfficialManifestName = "NOMNOM";
+    public const string OfficialManifestUrl = "https://kopterbuzz.github.io/NOMNOM/manifest/manifest.json";
+    public const string OfficialVersionUrl = "https://kopterbuzz.github.io/NOMNOM/manifest/version.json";
 
     public bool IsOverlayOpen => IsSettingsOpen || IsPerformanceDashboardOpen || IsLogViewerOpen;
 
     public Dictionary<string, string> ManifestSources { get; } = new()
     {
-        { "Stable Source", "https://raw.githubusercontent.com/NaghDiefallah/Yellowcake/refs/heads/main/Manifests/Stable.json" },
-        { "Community Source", "https://kopterbuzz.github.io/NOMNOM/manifest/manifest.json" },
-        { "Development Source", "https://raw.githubusercontent.com/NaghDiefallah/Yellowcake/refs/heads/main/Manifests/Development.json" }
+        { OfficialManifestName, OfficialManifestUrl }
     };
 
     partial void OnIsSettingsOpenChanged(bool value) 
@@ -183,7 +186,7 @@ public partial class MainViewModel
             var clipboard = TopLevel.GetTopLevel(desktop.MainWindow)?.Clipboard;
             if (clipboard != null)
             {
-                var text = await clipboard.GetTextAsync();
+                var text = await ClipboardExtensions.TryGetTextAsync(clipboard);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     SettingsShareCode = text;
@@ -345,12 +348,11 @@ public partial class MainViewModel
 
     partial void OnSelectedSourceChanged(KeyValuePair<string, string> value)
     {
-    if (string.IsNullOrWhiteSpace(value.Value)) return;
+    _manifestService.TargetUrl = OfficialManifestUrl;
+    SelectedSourceName = OfficialManifestName;
+    _db.SaveSetting("ManifestSourceFriendlyName", OfficialManifestName);
 
-    _manifestService.TargetUrl = value.Value;
-    _db.SaveSetting("ManifestSourceFriendlyName", value.Key);
-
-    Log.Information("Source switched to {Name}: {Url}", value.Key, value.Value);
+    Log.Information("Source set to {Name}: {Url}", OfficialManifestName, OfficialManifestUrl);
 
     _ = Task.Run(async () =>
     {
@@ -361,7 +363,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to refresh mods after source change to {Name}", value.Key);
+            Log.Error(ex, "Failed to refresh mods after source update");
         }
     });
 }

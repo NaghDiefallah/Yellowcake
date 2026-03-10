@@ -86,20 +86,6 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             gh: new GitHubClient(new ProductHeaderValue("Yellowcake-Manager")),
             themeService: new ThemeService())
     {
-        // Command is already initialized by the other constructor
-        
-        if (_installService == null)
-        {
-            var root = AppContext.BaseDirectory;
-            var vaultPath = Path.Combine(root, "Mods");
-            Directory.CreateDirectory(vaultPath);
-            var inst = new InstallService(_pathService);
-            typeof(MainViewModel).GetField("_installService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, inst);
-
-            var mod = new ModService(_db, inst, _http, _gh);
-            typeof(MainViewModel).GetField("_modService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, mod);
-        }
-
         LoadPersistentData();
 
         _ = Task.Run(async () =>
@@ -166,6 +152,14 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
                 
                 Log.Information("Loaded {Count} BepInEx versions", versions.Count);
             });
+
+            // Auto-install BepInEx if not already installed and game path is set
+            if (!IsBepInstalled && !string.IsNullOrWhiteSpace(GamePath) && GamePath != "Not Set" && !string.IsNullOrWhiteSpace(SelectedBepInExVersion))
+            {
+                Log.Information("BepInEx not detected. Auto-installing latest version: {Version}", SelectedBepInExVersion);
+                NotificationService.Instance.Info($"Auto-installing BepInEx {SelectedBepInExVersion}...");
+                await AutoInstallBepInExAsync();
+            }
         }
         catch (HttpRequestException ex)
         {
@@ -178,6 +172,73 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             Log.Error(ex, "Failed to load BepInEx versions");
             GameStatus = $"Error loading versions: {ex.Message}";
             NotificationService.Instance.Error("Failed to load BepInEx versions");
+        }
+    }
+
+    private async Task AutoInstallBepInExAsync()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedBepInExVersion) || string.IsNullOrWhiteSpace(GamePath) || GamePath == "Not Set")
+        {
+            Log.Warning("Cannot auto-install BepInEx: missing version or game path");
+            return;
+        }
+
+        try
+        {
+            BusyMessage = $"Auto-installing BepInEx {SelectedBepInExVersion}...";
+            GameStatus = $"Installing BepInEx {SelectedBepInExVersion}...";
+
+            await _bepInExService.InstallVersionAsync(
+                SelectedBepInExVersion!,
+                GamePath!,
+                progress =>
+                {
+                    BepInExDownloadProgress = progress;
+                    Log.Debug("BepInEx auto-install progress: {Progress}%", progress);
+                });
+
+            Log.Information("BepInEx auto-installation completed successfully");
+            
+            await RefreshUI();
+            OnPropertyChanged(nameof(IsBepInstalled));
+            GameStatus = "Ready";
+            
+            NotificationService.Instance.Success($"BepInEx {SelectedBepInExVersion} installed successfully!");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Log.Error(ex, "BepInEx auto-install: Access denied");
+            GameStatus = "BepInEx auto-install failed: Access denied";
+            Log.Warning("BepInEx auto-install failed due to access restrictions. User can retry manually.");
+        }
+        catch (IOException ex)
+        {
+            Log.Error(ex, "BepInEx auto-install: File error");
+            GameStatus = "BepInEx auto-install failed: File error";
+            Log.Warning("BepInEx auto-install failed due to file issues. User can retry manually.");
+        }
+        catch (HttpRequestException ex)
+        {
+            Log.Error(ex, "BepInEx auto-install: Network error");
+            GameStatus = "BepInEx auto-install failed: Network error";
+            Log.Warning("BepInEx auto-install failed due to network issues. User can retry manually.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "BepInEx auto-install error");
+            GameStatus = "BepInEx auto-install failed";
+            Log.Warning("BepInEx auto-install failed. User can retry manually.");
+        }
+        finally
+        {
+            await Task.Delay(2000);
+            BepInExDownloadProgress = 0;
+            
+            if (GameStatus.StartsWith("Error") || GameStatus.Contains("failed"))
+            {
+                await Task.Delay(3000);
+                GameStatus = IsGameDetected ? "Ready" : "Awaiting game path...";
+            }
         }
     }
 
@@ -329,16 +390,10 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
 
         try
         {
-            var savedName = _db.GetSetting("ManifestSourceFriendlyName") ?? "Primary Source";
-            var source = ManifestSources.FirstOrDefault(s => s.Key == savedName);
-
-            if (source.Key == null)
-            {
-                source = ManifestSources.First();
-            }
-
+            var source = ManifestSources.First();
             _manifestService.TargetUrl = source.Value;
             SelectedSourceName = source.Key;
+            _db.SaveSetting("ManifestSourceFriendlyName", source.Key);
             OnPropertyChanged(nameof(SelectedSource));
 
             GamePath = _db.GetSetting("GamePath") ?? "Not Set";
@@ -348,11 +403,17 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
                 await AutoDetectGamePath();
             }
 
-            BusyMessage = "Checking for updates and mods...";
-            await Task.WhenAll(
-                CheckForAppUpdatesAsync(),
-                LoadAvailableModsAsync()
-            );
+            BusyMessage = "Loading mods...";
+            await LoadAvailableModsAsync();
+
+            BusyMessage = "Repairing installed mod layout...";
+            var repairedLayouts = await _modService.RepairStoredModLayoutsAsync(_shutdownCts.Token);
+            if (repairedLayouts > 0)
+            {
+                NotificationService.Instance.Info($"Repaired {repairedLayouts} mod folder layout(s).");
+            }
+
+            _ = Task.Run(CheckForAppUpdatesAsync);
 
             await SyncInstalledStates();
             await RefreshUI();

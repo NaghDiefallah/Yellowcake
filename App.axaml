@@ -14,10 +14,8 @@
 			<conv:EnumEqualsConverter x:Key="EnumEqualsConverter"/>
 			<conv:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
 			<conv:BoolToEnabledTextConverter x:Key="BoolToEnabledTextConverter" />
-			<conv:BoolToAccentBrushConverter x:Key="BoolToAccentBrushConverter" />
 			<conv:EnabledToOpacityConverter x:Key="EnabledToOpacityConverter" />
 			<conv:InverseBoolConverter x:Key="InverseBoolConverter"/>
-			<conv:ListToStringConverter x:Key="ListToStringConverter"/>
 			<conv:BoolToInstalledTextConverter x:Key="BoolToInstalledTextConverter"/>
 			<conv:BoolToStatusTextConverter x:Key="BoolToStatusTextConverter"/>
 

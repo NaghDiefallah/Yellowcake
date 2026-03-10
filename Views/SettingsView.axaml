@@ -72,23 +72,17 @@
                                 <TextBlock Text="Mod Repository Source" 
                                           FontWeight="SemiBold" 
                                           FontSize="15"/>
-                                <TextBlock Text="Choose which repository to fetch mods from" 
+                                <TextBlock Text="Using the official NOMNOM repository" 
                                           FontSize="12" 
                                           Foreground="{DynamicResource SubTextBrush}" 
                                           Opacity="0.9"/>
                             </StackPanel>
                             
-                            <ComboBox Grid.Column="1" 
-                                     ItemsSource="{Binding ManifestSources}"
-                                     SelectedItem="{Binding SelectedSource}"
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SelectedSource.Value}"
                                      Width="280"
-                                     VerticalAlignment="Center">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Key}" FontWeight="Medium"/>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                                     IsReadOnly="True"
+                                     VerticalAlignment="Center"/>
 
                             <TextBlock Grid.Row="1" 
                                       Grid.Column="1" 
@@ -368,16 +362,7 @@
                             </StackPanel>
                         </Button>
                         
-                        <Button Margin="6" 
-                               Command="{Binding OpenModFolderCommand}" 
-                               Classes="Tonal" 
-                               Height="48"
-                               HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <PathIcon Data="{StaticResource FolderIcon}" Width="14" Height="14"/>
-                                <TextBlock Text="Mods Folder" FontWeight="Medium"/>
-                            </StackPanel>
-                        </Button>
+              
                         
                         <Button Margin="6" 
                                Command="{Binding UpdateAllModsCommand}" 

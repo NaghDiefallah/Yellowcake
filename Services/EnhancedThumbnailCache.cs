@@ -17,7 +17,7 @@ public class EnhancedThumbnailCache
     private readonly string _cacheDirectory;
     private readonly HttpClient _http;
     private readonly ConcurrentDictionary<string, Bitmap> _memoryCache = new();
-    private readonly ConcurrentDictionary<string, Task<Bitmap>> _pendingLoads = new();
+    private readonly ConcurrentDictionary<string, Task<Bitmap?>> _pendingLoads = new();
     private readonly SemaphoreSlim _downloadSemaphore = new(3, 3); // Max 3 concurrent downloads
     private const int MaxMemoryCacheSize = 50;
     private const long MaxDiskCacheSize = 100 * 1024 * 1024; // 100MB
@@ -28,7 +28,7 @@ public class EnhancedThumbnailCache
     public EnhancedThumbnailCache(HttpClient http)
     {
         _http = http;
-        _cacheDirectory = Path.Combine(AppContext.BaseDirectory, "cache", "thumbnails");
+        _cacheDirectory = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "cache", "thumbnails");
         Directory.CreateDirectory(_cacheDirectory);
         
         _ = Task.Run(CleanOldCacheAsync);

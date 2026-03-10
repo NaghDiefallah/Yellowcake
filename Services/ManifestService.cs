@@ -59,18 +59,22 @@ public class ManifestService
                 {
                     try
                     {
-                        var refreshed = await FetchFromRemoteAsync(TargetUrl, CancellationToken.None);
+                        var refreshed = await FetchFromRemoteAsync(TargetUrl, ct);
                         if (refreshed?.Count > 0)
                         {
                             SaveCache(refreshed);
                             Log.Debug("[ManifestService] Background cache refresh completed ({Count} mods)", refreshed.Count);
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        Log.Debug("[ManifestService] Background refresh cancelled");
+                    }
                     catch (Exception ex)
                     {
                         Log.Debug(ex, "[ManifestService] Background refresh failed (non-critical)");
                     }
-                });
+                }, ct);
 
                 return cachedMods;
             }

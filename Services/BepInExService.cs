@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Yellowcake.Services;
@@ -30,6 +31,14 @@ public class BepInExService : IDisposable
 
             return releases
                 .Select(r => r.TagName)
+                // Filter to only v5.x releases (exclude v6, v7, etc.)
+                .Where(tag =>
+                {
+                    var cleanTag = tag.StartsWith("v") ? tag.Substring(1) : tag;
+                    var majorVersion = cleanTag.Split('.')[0];
+                    
+                    return majorVersion == "5" && Version.TryParse(cleanTag.Split('-')[0], out _);
+                })
                 .OrderByDescending(tag =>
                 {
                     var cleanTag = tag.StartsWith("v") ? tag.Substring(1) : tag;
@@ -49,9 +58,9 @@ public class BepInExService : IDisposable
         }
     }
 
-    public async Task InstallVersionAsync(string version, string gamePath, Action<double> progressCallback)
+    public async Task InstallVersionAsync(string version, string gamePath, Action<double> progressCallback, CancellationToken ct = default)
     {
-        var releases = await _httpClient.GetFromJsonAsync<List<GitHubRelease>>(ApiUrl);
+        var releases = await _httpClient.GetFromJsonAsync<List<GitHubRelease>>(ApiUrl, ct);
         var release = releases?.FirstOrDefault(r => r.TagName == version)
                       ?? throw new InvalidOperationException($"Version {version} not found.");
 
@@ -65,7 +74,7 @@ public class BepInExService : IDisposable
 
         try
         {
-            using (var response = await _httpClient.GetAsync(asset.BrowserDownloadUrl, HttpCompletionOption.ResponseHeadersRead))
+            using (var response = await _httpClient.GetAsync(asset.BrowserDownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct))
             {
                 response.EnsureSuccessStatusCode();
                 var totalBytes = response.Content.Headers.ContentLength ?? -1L;
@@ -77,9 +86,9 @@ public class BepInExService : IDisposable
                 var totalRead = 0L;
                 int bytesRead;
 
-                while ((bytesRead = await downloadStream.ReadAsync(buffer)) != 0)
+                while ((bytesRead = await downloadStream.ReadAsync(buffer, ct)) != 0)
                 {
-                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
                     totalRead += bytesRead;
 
                     if (totalBytes != -1)
@@ -87,6 +96,7 @@ public class BepInExService : IDisposable
                 }
             }
 
+            ct.ThrowIfCancellationRequested();
             ZipFile.ExtractToDirectory(tempFile, gameDir, overwriteFiles: true);
         }
         finally

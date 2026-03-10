@@ -100,11 +100,13 @@ public partial class MainViewModel
             var shell = Type.GetTypeFromProgID("WScript.Shell");
             if (shell == null) return;
 
-            dynamic wsh = Activator.CreateInstance(shell);
-            dynamic shortcut = wsh.CreateShortcut(shortcutPath);
+            var wsh = Activator.CreateInstance(shell);
+            if (wsh == null) return;
+            dynamic shortcut = ((dynamic)wsh).CreateShortcut(shortcutPath);
+            var workingDirectory = Path.GetDirectoryName(GamePath);
 
             shortcut.TargetPath = GamePath;
-            shortcut.WorkingDirectory = Path.GetDirectoryName(GamePath);
+            shortcut.WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory) ? desktopPath : workingDirectory;
             shortcut.Description = "Launch Nuclear Option with mods";
             shortcut.Save();
 
@@ -155,35 +157,6 @@ public partial class MainViewModel
             NotificationService.Instance.Error("Failed to launch game.");
         }
     }
-
-    //[RelayCommand]
-    //public async Task InstallBepInEx()
-    //{
-    //    if (!IsGameDetected || string.IsNullOrWhiteSpace(SelectedBepInExVersion)) return;
-
-    //    try
-    //    {
-    //        GameStatus = "Installing BepInEx...";
-
-    //        await _bepInExService.InstallVersionAsync(
-    //            SelectedBepInExVersion, 
-    //            GamePath, 
-    //            p => BepInExDownloadProgress = p);
-
-    //        await RefreshUI();
-    //        NotificationService.Instance.Success("BepInEx installed successfully.");
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Log.Error(ex, "BepInEx installation failed");
-    //        NotificationService.Instance.Error("Installation failed.");
-    //    }
-    //    finally
-    //    {
-    //        BepInExDownloadProgress = 0;
-    //        GameStatus = IsGameDetected ? "Ready" : "Awaiting game path...";
-    //    }
-    //}
 
     [RelayCommand]
     public async Task UninstallBepInEx()

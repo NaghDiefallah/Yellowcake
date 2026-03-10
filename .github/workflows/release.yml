@@ -1,0 +1,174 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag to release (example: v1.2.3). Leave empty to use current ref name."
+        required: false
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: 10.0.x
+  SOLUTION_FILE: Yellowcake.slnx
+
+jobs:
+  verify:
+    name: Verify Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
+            global.json
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo
+
+      - name: Test
+        run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --nologo --logger "trx;LogFileName=test-results.trx" --results-directory TestResults/release
+
+      - name: Upload verify test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-test-results
+          path: TestResults/release
+          if-no-files-found: warn
+          retention-days: 30
+
+  publish:
+    name: Publish (${{ matrix.rid }})
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            package: Yellowcake-win-x64.zip
+            binary: Yellowcake.exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            package: Yellowcake-linux-x64.tar.gz
+            binary: Yellowcake
+          - os: macos-latest
+            rid: osx-x64
+            package: Yellowcake-osx-x64.tar.gz
+            binary: Yellowcake
+          - os: macos-latest
+            rid: osx-arm64
+            package: Yellowcake-osx-arm64.tar.gz
+            binary: Yellowcake
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
+            global.json
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
+
+      - name: Publish
+        run: dotnet publish Yellowcake.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:ContinuousIntegrationBuild=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --nologo -o publish/${{ matrix.rid }}
+
+      - name: Validate output binary
+        shell: pwsh
+        run: |
+          $binaryPath = Join-Path "publish/${{ matrix.rid }}" "${{ matrix.binary }}"
+          if (-not (Test-Path $binaryPath)) {
+            throw "Expected binary missing: $binaryPath"
+          }
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path publish/${{ matrix.rid }}/* -DestinationPath ${{ matrix.package }} -Force
+
+      - name: Package (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: tar -czf ${{ matrix.package }} -C publish/${{ matrix.rid }} .
+
+      - name: Create SHA256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash -Algorithm SHA256 "${{ matrix.package }}").Hash.ToLower()
+          "$hash  ${{ matrix.package }}" | Set-Content "${{ matrix.package }}.sha256"
+
+      - name: Upload release package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.rid }}
+          path: |
+            ${{ matrix.package }}
+            ${{ matrix.package }}.sha256
+          retention-days: 30
+
+  deploy:
+    name: Deploy GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Resolve tag name
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            echo "value=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: Release ${{ steps.tag.outputs.value }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/release-win-x64/Yellowcake-win-x64.zip
+            artifacts/release-win-x64/Yellowcake-win-x64.zip.sha256
+            artifacts/release-linux-x64/Yellowcake-linux-x64.tar.gz
+            artifacts/release-linux-x64/Yellowcake-linux-x64.tar.gz.sha256
+            artifacts/release-osx-x64/Yellowcake-osx-x64.tar.gz
+            artifacts/release-osx-x64/Yellowcake-osx-x64.tar.gz.sha256
+            artifacts/release-osx-arm64/Yellowcake-osx-arm64.tar.gz
+            artifacts/release-osx-arm64/Yellowcake-osx-arm64.tar.gz.sha256

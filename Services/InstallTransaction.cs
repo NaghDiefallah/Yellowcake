@@ -23,20 +23,22 @@ public class InstallTransaction : IDisposable
         _db = db ?? throw new ArgumentNullException(nameof(db));
     }
 
-    public async Task BeginAsync()
+    public Task BeginAsync()
     {
         _tempDirectory = Path.Combine(Path.GetTempPath(), $"yellowcake-install-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDirectory);
         
         Log.Information("Transaction started for {ModName}", _mod.Name);
+        return Task.CompletedTask;
     }
 
-    public async Task ExtractAsync()
+    public Task ExtractAsync()
     {
         if (_tempDirectory == null)
             throw new InvalidOperationException("Transaction not started");
 
         Log.Information("Extracting {ModName} to temporary location", _mod.Name);
+        return Task.CompletedTask;
     }
 
     public async Task VerifyAsync()
@@ -61,7 +63,7 @@ public class InstallTransaction : IDisposable
 
         try
         {
-            var targetPath = _installService.GetInstallPath(_mod.Id);
+            var targetPath = _installService.GetExpectedInstallPath(_mod);
             if (Directory.Exists(targetPath))
             {
                 _backupDirectory = targetPath + ".backup";
@@ -101,12 +103,12 @@ public class InstallTransaction : IDisposable
         {
             if (_backupDirectory != null && Directory.Exists(_backupDirectory))
             {
-                var targetPath = _installService.GetInstallPath(_mod.Id);
-                if (Directory.Exists(targetPath))
+                var restoreTargetPath = _installService.GetExpectedInstallPath(_mod);
+                if (Directory.Exists(restoreTargetPath))
                 {
-                    Directory.Delete(targetPath, true);
+                    Directory.Delete(restoreTargetPath, true);
                 }
-                Directory.Move(_backupDirectory, targetPath);
+                Directory.Move(_backupDirectory, restoreTargetPath);
             }
 
             if (_tempDirectory != null && Directory.Exists(_tempDirectory))
