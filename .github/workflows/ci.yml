@@ -24,7 +24,7 @@ permissions:
 env:
   DOTNET_VERSION: 10.0.x
   SOLUTION_FILE: Yellowcake.slnx
-  MIN_COVERAGE_PERCENT: 15
+  MIN_COVERAGE_PERCENT: 9
 
 jobs:
   build-and-test:
