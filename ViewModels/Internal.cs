@@ -65,6 +65,7 @@ public partial class MainViewModel
                     ModFilter.Voice => query.Where(m => m.IsVoicePack),
                     ModFilter.Livery => query.Where(m => m.IsLivery),
                     ModFilter.Missions => query.Where(m => m.IsMission),
+                    ModFilter.External => query.Where(m => m.IsExternalSource),
                     ModFilter.Plugins => query.Where(m => !m.IsLivery && !m.IsVoicePack && !m.IsMission),
                     ModFilter.Installed => query.Where(m => m.IsInstalled),
                     _ => query
@@ -222,17 +223,22 @@ public partial class MainViewModel
         if (reconciliation.TotalChanges > 0)
         {
             Log.Information(
-                "Reconciled installed mods with disk. Discovered: {Discovered}, Updated: {Updated}, Removed: {Removed}",
+                "Reconciled installed mods with disk. Discovered: {Discovered}, External: {ExternalDiscovered}, Updated: {Updated}, Removed: {Removed}",
                 reconciliation.Discovered,
+                reconciliation.ExternalDiscovered,
                 reconciliation.Updated,
                 reconciliation.Removed);
 
+            var summary = $"{reconciliation.Discovered}:{reconciliation.ExternalDiscovered}:{reconciliation.Updated}:{reconciliation.Removed}";
+
             var now = DateTime.UtcNow;
-            if ((now - _lastReconciliationNoticeUtc).TotalSeconds >= 30)
+            if (summary != _lastReconciliationSummary &&
+                (now - _lastReconciliationNoticeUtc).TotalSeconds >= 30)
             {
                 NotificationService.Instance.Info(
-                    $"Synced external mod changes: +{reconciliation.Discovered} discovered, ~{reconciliation.Updated} updated, -{reconciliation.Removed} removed.");
+                    $"Synced external mod changes: +{reconciliation.Discovered} discovered ({reconciliation.ExternalDiscovered} external), ~{reconciliation.Updated} updated, -{reconciliation.Removed} removed.");
                 _lastReconciliationNoticeUtc = now;
+                _lastReconciliationSummary = summary;
             }
         }
 

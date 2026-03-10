@@ -13,5 +13,5 @@ public class StatusColorConverter : IValueConverter
         bool isDetected = value is bool b && b;
         return isDetected ? Brushes.LimeGreen : Brushes.OrangeRed;
     }
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }

@@ -24,6 +24,7 @@ permissions:
 env:
   DOTNET_VERSION: 10.0.x
   SOLUTION_FILE: Yellowcake.slnx
+  MIN_COVERAGE_PERCENT: 15
 
 jobs:
   build-and-test:
@@ -52,7 +53,11 @@ jobs:
         run: dotnet restore ${{ env.SOLUTION_FILE }} --nologo
 
       - name: Build
-        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo
+        run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore --nologo -warnaserror
+
+      - name: Verify formatting
+        if: runner.os == 'Linux'
+        run: dotnet format ${{ env.SOLUTION_FILE }} --verify-no-changes --no-restore
 
       - name: Test with coverage
         run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --nologo --logger "trx;LogFileName=test-results.trx" --collect "XPlat Code Coverage" --results-directory TestResults/${{ runner.os }}
@@ -65,6 +70,26 @@ jobs:
           path: TestResults/${{ runner.os }}
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Enforce minimum coverage
+        if: runner.os == 'Linux'
+        shell: pwsh
+        run: |
+          $coverageFile = Get-ChildItem -Path "TestResults/${{ runner.os }}" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+          if (-not $coverageFile) {
+            throw "Coverage report not found under TestResults/${{ runner.os }}"
+          }
+
+          [xml]$coverageXml = Get-Content $coverageFile.FullName
+          $lineRate = [double]$coverageXml.coverage.'line-rate' * 100
+          $minCoverage = [double]"${{ env.MIN_COVERAGE_PERCENT }}"
+
+          Write-Host "Measured line coverage: $([math]::Round($lineRate, 2))%"
+          Write-Host "Minimum required line coverage: $minCoverage%"
+
+          if ($lineRate -lt $minCoverage) {
+            throw "Coverage gate failed: $([math]::Round($lineRate, 2))% < $minCoverage%"
+          }
 
   package-smoke:
     name: Package Smoke Check (Linux)

@@ -91,6 +91,59 @@ public class ModDiscoveryTests : IDisposable
         stored.IsEnabled.Should().BeTrue();
     }
 
+    [Fact]
+    public void ReconcileInstalledModsWithDisk_ShouldDiscoverUnknownExternalPluginWithoutManifestEntry()
+    {
+        var env = CreateEnvironment();
+        var modId = "external_only_" + Guid.NewGuid().ToString("N");
+
+        var pluginDir = Path.Combine(env.GameDir, "BepInEx", "plugins", modId);
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "plugin.dll"), "x");
+
+        var result = env.ModService.ReconcileInstalledModsWithDisk([]);
+        var stored = env.Db.GetAll<Mod>("addons").Single(m => m.Id == modId);
+
+        result.Discovered.Should().Be(1);
+        result.ExternalDiscovered.Should().Be(1);
+        stored.Source.Should().Be("External");
+        stored.IsInstalled.Should().BeTrue();
+        stored.IsEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ReconcileInstalledModsWithDisk_ShouldNotDoubleCountWhenStorageAndGameTargetsExist()
+    {
+        var env = CreateEnvironment();
+        var modId = "dual_location_" + Guid.NewGuid().ToString("N");
+
+        var pluginDir = Path.Combine(env.GameDir, "BepInEx", "plugins", modId);
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "plugin.dll"), "x");
+
+        var storageDir = Path.Combine(PathService.GetModsDirectory(), modId);
+        Directory.CreateDirectory(storageDir);
+        File.WriteAllText(Path.Combine(storageDir, "copy.dll"), "x");
+        _cleanupPaths.Add(storageDir);
+
+        var result = env.ModService.ReconcileInstalledModsWithDisk([]);
+        var stored = env.Db.GetAll<Mod>("addons").Where(m => m.Id == modId).ToList();
+
+        result.Discovered.Should().Be(1);
+        stored.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void ReconcileInstalledModsWithDisk_ShouldDoNothingWhenNoDiskOrDbMods()
+    {
+        var env = CreateEnvironment();
+
+        var result = env.ModService.ReconcileInstalledModsWithDisk([]);
+
+        result.TotalChanges.Should().Be(0);
+        env.Db.GetAll<Mod>("addons").Should().BeEmpty();
+    }
+
     private TestEnvironment CreateEnvironment()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), "YellowcakeTests", "migration", Guid.NewGuid().ToString("N"));

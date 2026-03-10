@@ -245,6 +245,7 @@ public partial class MainViewModel
     private Dictionary<string, string> _searchIndex = new(StringComparer.OrdinalIgnoreCase);
     private volatile int _activeBulkDownloads;
     private DateTime _lastReconciliationNoticeUtc = DateTime.MinValue;
+    private string _lastReconciliationSummary = string.Empty;
 
     partial void OnSelectedSourceChanged(KeyValuePair<string, string> value);
 }

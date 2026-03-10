@@ -76,6 +76,9 @@
 					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.Missions}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.Missions}">
 						<TextBlock Text="Missions"/>
 					</RadioButton>
+					<RadioButton Classes="FilterChip" IsChecked="{Binding ActiveFilter, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static models:ModFilter.External}}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static models:ModFilter.External}">
+						<TextBlock Text="External"/>
+					</RadioButton>
 				</StackPanel>
 			</ScrollViewer>
 			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -218,6 +221,9 @@
 											<TextBlock Text="{Binding Version, StringFormat='v{0}'}" Foreground="{DynamicResource SubTextBrush}" FontSize="12" VerticalAlignment="Center" Opacity="0.75"/>
 											<Border Background="#FF4CAF50" CornerRadius="4" Padding="4,2" VerticalAlignment="Center" IsVisible="{Binding HasUpdate}">
 												<TextBlock Text="UPDATE" FontSize="9" FontWeight="Bold" Foreground="White"/>
+											</Border>
+											<Border Background="#FF7A5AF8" CornerRadius="4" Padding="4,2" VerticalAlignment="Center" IsVisible="{Binding IsExternalSource}">
+												<TextBlock Text="EXTERNAL" FontSize="9" FontWeight="Bold" Foreground="White"/>
 											</Border>
 										</StackPanel>
 

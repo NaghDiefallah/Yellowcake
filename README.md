@@ -134,13 +134,30 @@ A powerful, modern desktop application for managing mods in Nuclear Option. Buil
 4. On first launch, set your Nuclear Option game path
 
 ### Linux
-```
-wget https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-linux-x64.tar.gz tar -xzf Yellowcake-linux-x64.tar.gz chmod +x Yellowcake ./Yellowcake
+```bash
+wget https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-linux-x64.tar.gz
+wget https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-linux-x64.tar.gz.sha256
+sha256sum -c Yellowcake-linux-x64.tar.gz.sha256
+tar -xzf Yellowcake-linux-x64.tar.gz
+chmod +x Yellowcake
+./Yellowcake
 ```
 ### macOS
+```bash
+curl -L https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-osx-x64.tar.gz -o Yellowcake-osx-x64.tar.gz
+curl -L https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-osx-x64.tar.gz.sha256 -o Yellowcake-osx-x64.tar.gz.sha256
+shasum -a 256 -c Yellowcake-osx-x64.tar.gz.sha256
+tar -xzf Yellowcake-osx-x64.tar.gz
+chmod +x Yellowcake
+./Yellowcake
 ```
-curl -L https://github.com/NaghDiefallah/Yellowcake/releases/latest/download/Yellowcake-osx-x64.zip -o Yellowcake.zip unzip Yellowcake.zip chmod +x Yellowcake.app/Contents/MacOS/Yellowcake open Yellowcake.app
-```
+
+### Verify Downloads (All Platforms)
+
+Every release now includes `.sha256` checksum files and a `release-manifest.json` asset.
+
+- Compare your downloaded artifact hash with the matching `.sha256` file before running binaries.
+- Use `release-manifest.json` for automated verification workflows.
 
 ---
 

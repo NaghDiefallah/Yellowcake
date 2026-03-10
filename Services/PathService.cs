@@ -115,7 +115,12 @@ public class PathService
 
     public static string GetModsDirectory()
     {
-        var modsPath = Path.Combine(AppContext.BaseDirectory, "Yellowcake", "mods");
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var baseDataPath = string.IsNullOrWhiteSpace(localAppData)
+            ? Path.Combine(Path.GetTempPath(), "Yellowcake")
+            : Path.Combine(localAppData, "Yellowcake");
+
+        var modsPath = Path.Combine(baseDataPath, "mods");
         
         if (!Directory.Exists(modsPath))
         {

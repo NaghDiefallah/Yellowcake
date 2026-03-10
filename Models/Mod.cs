@@ -234,6 +234,9 @@ public partial class Mod : ObservableObject
     public bool IsAddon => !string.IsNullOrWhiteSpace(Source) && Source != "Remote";
 
     [BsonIgnore, JsonIgnore]
+    public bool IsExternalSource => string.Equals(Source, "External", StringComparison.OrdinalIgnoreCase);
+
+    [BsonIgnore, JsonIgnore]
     public bool CanUpdate => HasUpdate && !IsDownloading;
 
     [BsonIgnore, JsonIgnore]
@@ -540,5 +543,6 @@ public enum ModFilter
     Voice,
     Livery,
     Missions,
+    External,
     Installed
 }

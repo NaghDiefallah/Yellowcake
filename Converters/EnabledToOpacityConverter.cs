@@ -11,5 +11,5 @@ public class EnabledToOpacityConverter : IValueConverter
         return value is bool isEnabled && isEnabled ? 1.0 : 0.5;
     }
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }

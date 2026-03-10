@@ -121,4 +121,14 @@ public class ModModelTests
         mod.InstalledVersionString.Should().BeNull();
         mod.InstalledArtifactHash.Should().BeNull();
     }
+
+    [Fact]
+    public void IsExternalSource_ShouldBeTrueOnlyForExternalSourceMods()
+    {
+        var external = new Mod { Source = "External" };
+        var remote = new Mod { Source = "Remote" };
+
+        external.IsExternalSource.Should().BeTrue();
+        remote.IsExternalSource.Should().BeFalse();
+    }
 }

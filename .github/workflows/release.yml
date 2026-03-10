@@ -156,6 +156,46 @@ jobs:
             echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Verify package checksums
+        run: |
+          set -euo pipefail
+          find artifacts -name "*.sha256" -type f -print0 | while IFS= read -r -d '' file; do
+            (cd "$(dirname "$file")" && sha256sum -c "$(basename "$file")")
+          done
+
+      - name: Create release manifest
+        run: |
+          set -euo pipefail
+          {
+            echo '{'
+            echo '  "tag": "${{ steps.tag.outputs.value }}",'
+            echo '  "generatedAtUtc": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",'
+            echo '  "assets": ['
+
+            first=1
+            while IFS= read -r -d '' pkg; do
+              checksum_file="$pkg.sha256"
+              sha=$(cut -d ' ' -f1 "$checksum_file")
+              size=$(stat -c%s "$pkg")
+              name=$(basename "$pkg")
+
+              if [ $first -eq 0 ]; then
+                echo ','
+              fi
+              first=0
+
+              echo '    {'
+              echo '      "name": "'"$name"'",'
+              echo '      "sizeBytes": '"$size"','
+              echo '      "sha256": "'"$sha"'"'
+              echo -n '    }'
+            done < <(find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -print0 | sort -z)
+
+            echo
+            echo '  ]'
+            echo '}'
+          } > artifacts/release-manifest.json
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -172,3 +212,4 @@ jobs:
             artifacts/release-osx-x64/Yellowcake-osx-x64.tar.gz.sha256
             artifacts/release-osx-arm64/Yellowcake-osx-arm64.tar.gz
             artifacts/release-osx-arm64/Yellowcake-osx-arm64.tar.gz.sha256
+            artifacts/release-manifest.json

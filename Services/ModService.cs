@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Yellowcake.Helpers;
@@ -19,6 +20,9 @@ namespace Yellowcake.Services;
 
 public class ModService
 {
+    private const string WsoYappinatorId = "WSOYappinator";
+    private const string WsoYappinatorFallbackUrl = "https://github.com/nikkorap/NO-WSO-Yappinator/releases/download/2.1.1/com.nikkorap.WSOYappinator_2.1.1.dll";
+
     private readonly DatabaseService _db;
     private readonly InstallService _installService;
     private readonly HttpClient _http;
@@ -244,13 +248,13 @@ public class ModService
     private bool IsWsoyAppinatorInstalled()
     {
         var installed = _db.GetAll<Mod>("addons")
-            .Any(m => string.Equals(m.Id, "WSOYappinator", StringComparison.OrdinalIgnoreCase) && m.IsInstalled);
+            .Any(m => string.Equals(m.Id, WsoYappinatorId, StringComparison.OrdinalIgnoreCase) && m.IsInstalled);
         if (installed)
         {
             return true;
         }
 
-        var storagePath = GetModStoragePath("WSOYappinator");
+        var storagePath = GetModStoragePath(WsoYappinatorId);
         if (Directory.Exists(storagePath) && Directory.EnumerateFiles(storagePath, "*", SearchOption.AllDirectories).Any())
         {
             return true;
@@ -269,7 +273,7 @@ public class ModService
         }
 
         var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
-        var hostFolder = Path.Combine(pluginsDir, "WSOYappinator");
+        var hostFolder = Path.Combine(pluginsDir, WsoYappinatorId);
 
         if (Directory.Exists(hostFolder))
         {
@@ -288,7 +292,7 @@ public class ModService
         }
 
         var existingHost = _db.GetAll<Mod>("addons")
-            .FirstOrDefault(m => string.Equals(m.Id, "WSOYappinator", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(m => string.Equals(m.Id, WsoYappinatorId, StringComparison.OrdinalIgnoreCase));
 
         if (existingHost != null)
         {
@@ -298,20 +302,70 @@ public class ModService
             return;
         }
 
-        var hostMod = allMods.FirstOrDefault(m => string.Equals(m.Id, "WSOYappinator", StringComparison.OrdinalIgnoreCase));
-        if (hostMod == null)
-        {
-            throw new InvalidOperationException("Voice pack requires WSOYappinator, but it was not found in the manifest.");
-        }
+        var hostMod = allMods.FirstOrDefault(m => string.Equals(m.Id, WsoYappinatorId, StringComparison.OrdinalIgnoreCase))
+                     ?? CreateFallbackWsoyAppinatorMod();
 
         Log.Information("Installing required dependency WSOYappinator before voice pack installation.");
         NotificationService.Instance.Info("Installing required dependency: WSO Yappinator...");
 
-        await DownloadAndInstallModAsync(
-            hostMod,
-            new Progress<double>(_ => { }),
-            allMods,
-            ct);
+        try
+        {
+            await DownloadAndInstallModAsync(
+                hostMod,
+                new Progress<double>(_ => { }),
+                allMods,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            // Do not hard-fail voicepack installation when dependency metadata is unavailable.
+            Log.Warning(ex, "Failed to auto-install WSOYappinator; continuing with voice pack installation fallback.");
+            NotificationService.Instance.Warning(
+                "Could not auto-install WSOYappinator. Voice pack files will be installed, but audio may not work until the dependency is installed.");
+
+            EnsureVoicePackAudioDirectory();
+        }
+    }
+
+    private Mod CreateFallbackWsoyAppinatorMod()
+    {
+        Log.Warning("WSOYappinator was missing from manifest. Falling back to built-in release URL.");
+
+        return new Mod
+        {
+            Id = WsoYappinatorId,
+            Name = "WSO Yappinator",
+            Description = "Voice pack host dependency",
+            Tags = new List<string> { "voice", "dependency" },
+            Artifacts =
+            [
+                new Yellowcake.Models.Artifact
+                {
+                    Category = "release",
+                    Type = "Plugin",
+                    Version = "2.1.1",
+                    DownloadUrl = WsoYappinatorFallbackUrl
+                }
+            ]
+        };
+    }
+
+    private void EnsureVoicePackAudioDirectory()
+    {
+        var gamePath = _db.GetSetting("GamePath");
+        if (string.IsNullOrWhiteSpace(gamePath))
+        {
+            return;
+        }
+
+        var gameDir = Path.GetDirectoryName(gamePath);
+        if (string.IsNullOrWhiteSpace(gameDir))
+        {
+            return;
+        }
+
+        var audioPath = Path.Combine(gameDir, "BepInEx", "plugins", WsoYappinatorId, "audio");
+        Directory.CreateDirectory(audioPath);
     }
 
     private static void NormalizeExtractedStructure(string rootPath)
@@ -582,20 +636,25 @@ public class ModService
         }
 
         var dbMods = _db.GetAll<Mod>("addons");
-        var dbById = dbMods.ToDictionary(m => m.Id, StringComparer.OrdinalIgnoreCase);
+        var dbById = dbMods
+            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .ToDictionary(m => m.Id, StringComparer.OrdinalIgnoreCase);
 
-        // Discover mods that exist on disk but are missing from the local DB.
-        foreach (var remote in remoteMods.Where(m => !string.IsNullOrWhiteSpace(m.Id)))
+        var remoteById = remoteMods
+            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
+
+        var onDiskById = ScanOnDiskModInstallations();
+
+        // Reconcile known mods from manifest and external disk state.
+        foreach (var entry in onDiskById)
         {
-            var presentOnDisk = IsModPresentOnDisk(remote);
-            if (!presentOnDisk)
-            {
-                continue;
-            }
+            var modId = entry.Key;
+            var onDiskInfo = entry.Value;
+            var enabled = onDiskInfo.IsEnabled;
 
-            var enabled = IsEnabledOnDisk(remote);
-
-            if (dbById.TryGetValue(remote.Id, out var existing))
+            if (dbById.TryGetValue(modId, out var existing))
             {
                 var changed = false;
 
@@ -613,7 +672,9 @@ public class ModService
 
                 if (string.IsNullOrWhiteSpace(existing.InstalledVersionString))
                 {
-                    existing.InstalledVersionString = remote.Version;
+                    existing.InstalledVersionString = remoteById.TryGetValue(modId, out var rv)
+                        ? rv.Version
+                        : "unknown";
                     changed = true;
                 }
 
@@ -626,10 +687,18 @@ public class ModService
                 continue;
             }
 
-            var discovered = CreateDiscoveredRecord(remote, enabled);
+            var discovered = remoteById.TryGetValue(modId, out var remote)
+                ? CreateDiscoveredRecord(remote, enabled)
+                : CreateExternalDiscoveredRecord(modId, onDiskInfo);
+
             _db.Upsert("addons", discovered);
             dbById[discovered.Id] = discovered;
             result.Discovered++;
+
+            if (!remoteById.ContainsKey(modId))
+            {
+                result.ExternalDiscovered++;
+            }
         }
 
         // Mark DB mods as removed when no managed storage or on-disk install exists anymore.
@@ -640,7 +709,7 @@ public class ModService
                 continue;
             }
 
-            if (IsModPresentOnDisk(dbMod))
+            if (onDiskById.ContainsKey(dbMod.Id) || IsModPresentOnDisk(dbMod))
             {
                 continue;
             }
@@ -652,6 +721,162 @@ public class ModService
 
         return result;
     }
+
+    private Mod CreateExternalDiscoveredRecord(string modId, OnDiskModInfo info)
+    {
+        return new Mod
+        {
+            Id = modId,
+            Name = modId,
+            Description = "Discovered from an external mod manager or manual installation.",
+            Source = "External",
+            IsInstalled = true,
+            IsEnabled = info.IsEnabled,
+            IsVoicePack = info.Kind == DiscoveredModKind.VoicePack,
+            IsMission = info.Kind == DiscoveredModKind.Mission,
+            IsLivery = info.Kind == DiscoveredModKind.Livery,
+            InstalledVersionString = "unknown",
+            Artifacts = new List<Yellowcake.Models.Artifact>()
+        };
+    }
+
+    private Dictionary<string, OnDiskModInfo> ScanOnDiskModInstallations()
+    {
+        var discovered = new Dictionary<string, OnDiskModInfo>(StringComparer.OrdinalIgnoreCase);
+
+        var gamePath = _db.GetSetting("GamePath");
+        if (string.IsNullOrWhiteSpace(gamePath))
+        {
+            return discovered;
+        }
+
+        var gameDir = Path.GetDirectoryName(gamePath);
+        if (string.IsNullOrWhiteSpace(gameDir))
+        {
+            return discovered;
+        }
+
+        var pluginsDir = Path.Combine(gameDir, "BepInEx", "plugins");
+        if (Directory.Exists(pluginsDir))
+        {
+            foreach (var dir in Directory.GetDirectories(pluginsDir))
+            {
+                var id = Path.GetFileName(dir);
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    continue;
+                }
+
+                if (string.Equals(id, WsoYappinatorId, StringComparison.OrdinalIgnoreCase))
+                {
+                    var audioPath = Path.Combine(dir, "audio");
+                    if (Directory.Exists(audioPath))
+                    {
+                        foreach (var voiceDir in Directory.GetDirectories(audioPath))
+                        {
+                            var voiceId = Path.GetFileName(voiceDir);
+                            if (string.IsNullOrWhiteSpace(voiceId))
+                            {
+                                continue;
+                            }
+
+                            RegisterDiscovered(discovered, voiceId, DiscoveredModKind.VoicePack, isEnabled: true);
+                        }
+                    }
+
+                    continue;
+                }
+
+                RegisterDiscovered(discovered, id, DiscoveredModKind.Plugin, isEnabled: true);
+            }
+
+            foreach (var dllPath in Directory.GetFiles(pluginsDir, "*.dll", SearchOption.TopDirectoryOnly))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(dllPath);
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    continue;
+                }
+
+                var guessedId = GuessModIdFromDll(fileName);
+                if (string.IsNullOrWhiteSpace(guessedId) || string.Equals(guessedId, WsoYappinatorId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                RegisterDiscovered(discovered, guessedId, DiscoveredModKind.Plugin, isEnabled: true);
+            }
+        }
+
+        var missionsDir = Path.Combine(gameDir, "Missions");
+        if (Directory.Exists(missionsDir))
+        {
+            foreach (var dir in Directory.GetDirectories(missionsDir))
+            {
+                var id = Path.GetFileName(dir);
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    RegisterDiscovered(discovered, id, DiscoveredModKind.Mission, isEnabled: true);
+                }
+            }
+        }
+
+        var legacyVoiceRoot = Path.Combine(PathService.GetModsDirectory(), WsoYappinatorId, "audio");
+        if (Directory.Exists(legacyVoiceRoot))
+        {
+            foreach (var dir in Directory.GetDirectories(legacyVoiceRoot))
+            {
+                var id = Path.GetFileName(dir);
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    RegisterDiscovered(discovered, id, DiscoveredModKind.VoicePack, isEnabled: false);
+                }
+            }
+        }
+
+        return discovered;
+    }
+
+    private static string GuessModIdFromDll(string fileName)
+    {
+        var normalized = Regex.Replace(fileName, "_\\d+(\\.\\d+)*$", string.Empty);
+        var segments = normalized.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length == 0 ? normalized : segments[^1];
+    }
+
+    private static void RegisterDiscovered(
+        Dictionary<string, OnDiskModInfo> discovered,
+        string id,
+        DiscoveredModKind kind,
+        bool isEnabled)
+    {
+        if (discovered.TryGetValue(id, out var existing))
+        {
+            // Prefer the stronger classification (voice pack/mission) over generic plugin.
+            if (existing.Kind == DiscoveredModKind.Plugin && kind != DiscoveredModKind.Plugin)
+            {
+                discovered[id] = new OnDiskModInfo(kind, existing.IsEnabled || isEnabled);
+            }
+            else if (isEnabled && !existing.IsEnabled)
+            {
+                discovered[id] = existing with { IsEnabled = true };
+            }
+
+            return;
+        }
+
+        discovered[id] = new OnDiskModInfo(kind, isEnabled);
+    }
+
+    private enum DiscoveredModKind
+    {
+        Plugin,
+        VoicePack,
+        Mission,
+        Livery
+    }
+
+    private sealed record OnDiskModInfo(DiscoveredModKind Kind, bool IsEnabled);
 
     private static Mod CreateDiscoveredRecord(Mod remote, bool enabled)
     {
@@ -1136,6 +1361,7 @@ public class ModValidationResult
 public class ReconciliationResult
 {
     public int Discovered { get; set; }
+    public int ExternalDiscovered { get; set; }
     public int Updated { get; set; }
     public int Removed { get; set; }
 
