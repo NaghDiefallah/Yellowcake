@@ -1,11 +1,9 @@
 name: Version Tagger
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**/*.md"
-      - "LICENSE"
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       bump:
@@ -34,14 +32,18 @@ permissions:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    # Do not tag commits produced by automation to avoid accidental loops.
-    if: github.actor != 'github-actions[bot]'
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Fetch tags
         run: git fetch --tags --force
@@ -57,12 +59,15 @@ jobs:
             exit 0
           fi
 
-          # Auto-mode from commit messages in this push:
-          # major -> BREAKING CHANGE or !: marker, minor -> feat:, else patch.
-          range="${{ github.event.before }}..${{ github.sha }}"
+          prefix="${{ github.event.inputs.prefix || 'v' }}"
+          latest=$(git tag --list "${prefix}*" --sort=-v:refname | head -n 1)
 
-          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            range="${{ github.sha }}"
+          # Auto-mode from commits since latest version tag:
+          # major -> BREAKING CHANGE or !: marker, minor -> feat:, else patch.
+          if [ -n "$latest" ]; then
+            range="${latest}..HEAD"
+          else
+            range="HEAD"
           fi
 
           messages=$(git log --format=%B "$range" || true)
